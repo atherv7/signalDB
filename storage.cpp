@@ -7,10 +7,10 @@ void Storage::flush() {}
 
 void Storage::insert(Entry entry) { this->storage.push_back(entry); }
 
-std::vector<Entry *> Storage::get_before(Timestamp &time) {
-  std::vector<Entry *> entries{};
+std::vector<const Entry *> Storage::get_before(Timestamp &time) {
+  std::vector<const Entry *> entries{};
 
-  for (Entry entry : this->storage) {
+  for (const auto &entry : this->storage) {
     if (entry.time < time) {
       entries.push_back(&entry);
     }
@@ -19,10 +19,10 @@ std::vector<Entry *> Storage::get_before(Timestamp &time) {
   return entries;
 }
 
-std::vector<Entry *> Storage::get_after(Timestamp &time) {
-  std::vector<Entry *> entries{};
+std::vector<const Entry *> Storage::get_after(Timestamp &time) {
+  std::vector<const Entry *> entries{};
 
-  for (Entry entry : this->storage) {
+  for (const auto &entry : this->storage) {
     if (entry.time > time) {
       entries.push_back(&entry);
     }
@@ -31,11 +31,11 @@ std::vector<Entry *> Storage::get_after(Timestamp &time) {
   return entries;
 }
 
-std::vector<Entry *> Storage::get_between(Timestamp &before_time,
-                                          Timestamp &after_time) {
-  std::vector<Entry *> entries{};
+std::vector<const Entry *> Storage::get_between(Timestamp &before_time,
+                                                Timestamp &after_time) {
+  std::vector<const Entry *> entries{};
 
-  for (Entry entry : this->storage) {
+  for (const auto &entry : this->storage) {
     if (entry.time > before_time && entry.time < after_time) {
       entries.push_back(&entry);
     }
@@ -62,4 +62,10 @@ bool Storage::delete_entry(Entry &entry) {
 
   this->storage.erase(this->storage.begin() + index_to_delete);
   return true;
+}
+
+void Storage::print_storage() {
+  for (Entry &entry : this->storage) {
+    std::cout << entry << std::endl;
+  }
 }

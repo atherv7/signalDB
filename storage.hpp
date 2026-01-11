@@ -1,5 +1,7 @@
 #ifndef STORAGE
 #define STORAGE
+#include <iostream>
+#include <ostream>
 #include <vector>
 
 struct Timestamp {
@@ -20,6 +22,11 @@ struct Timestamp {
   bool operator>(const Timestamp &other_time) const {
     return other_time < *this;
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const Timestamp &time) {
+    os << "Timestamp(hour: " << time.hour << ", minute: " << time.min;
+    return os;
+  }
 };
 
 struct Entry {
@@ -28,6 +35,11 @@ struct Entry {
 
   bool operator==(const Entry &other_entry) const {
     return time == other_entry.time && value == other_entry.value;
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const Entry &ent) {
+    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value;
+    return os;
   }
 };
 
@@ -52,23 +64,28 @@ public:
   /*
    * get entries before timestamp
    */
-  std::vector<Entry *> get_before(Timestamp &time);
+  std::vector<const Entry *> get_before(Timestamp &time);
 
   /*
    * get entries after timestamp
    */
-  std::vector<Entry *> get_after(Timestamp &time);
+  std::vector<const Entry *> get_after(Timestamp &time);
 
   /*
    * get entries in between timestamps
    */
-  std::vector<Entry *> get_between(Timestamp &before_time,
-                                   Timestamp &after_time);
+  std::vector<const Entry *> get_between(Timestamp &before_time,
+                                         Timestamp &after_time);
 
   /*
    * delete entry from storage
    */
   bool delete_entry(Entry &entry);
+
+  /*
+   * print current in memory storage
+   */
+  void print_storage();
 };
 
 #endif // STORAGE

@@ -10,12 +10,11 @@ int main() {
   store->insert(Entry{.time = Timestamp{.hour = 2, .min = 45}, .value = 8});
 
   Timestamp time_check = Timestamp{.hour = 0, .min = 10};
-  std::vector<Entry *> after_35 = store->get_after(time_check);
+  std::vector<const Entry *> after_35 = store->get_after(time_check);
 
   std::cout << "======== After 35 =============" << std::endl;
   for (auto ent : after_35) {
-    std::cout << ent->time.hour << ", " << ent->time.min << ", " << ent->value
-              << std ::endl;
+    std::cout << *ent << std::endl;
   }
 
   Entry entry_to_delete =
@@ -24,4 +23,7 @@ int main() {
 
   std::cout << "======== deleted ============" << std::endl;
   std::cout << "deleted: " << deleted << std::endl;
+
+  std::cout << "========= current storage ======" << std::endl;
+  store->print_storage();
 }

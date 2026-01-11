@@ -1,5 +1,6 @@
 #ifndef STORAGE
 #define STORAGE
+#include <functional>
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -24,7 +25,7 @@ struct Timestamp {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Timestamp &time) {
-    os << "Timestamp(hour: " << time.hour << ", minute: " << time.min;
+    os << "Timestamp(hour: " << time.hour << ", minute: " << time.min << ")";
     return os;
   }
 };
@@ -38,8 +39,15 @@ struct Entry {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Entry &ent) {
-    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value;
+    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value << ")";
     return os;
+  }
+
+  Entry clone() {
+    return Entry{
+        .time = Timestamp{.hour = time.hour, .min = time.min},
+        .value = value,
+    };
   }
 };
 
@@ -53,6 +61,11 @@ private:
    */
   void flush();
 
+  std::vector<Entry>
+  search_in_file(std::function<bool(const Entry &)> comparison);
+
+  bool delete_from_file(Entry &entry);
+
 public:
   Storage(int capacity);
 
@@ -64,18 +77,17 @@ public:
   /*
    * get entries before timestamp
    */
-  std::vector<const Entry *> get_before(Timestamp &time);
+  std::vector<Entry> get_before(Timestamp &time);
 
   /*
    * get entries after timestamp
    */
-  std::vector<const Entry *> get_after(Timestamp &time);
+  std::vector<Entry> get_after(Timestamp &time);
 
   /*
    * get entries in between timestamps
    */
-  std::vector<const Entry *> get_between(Timestamp &before_time,
-                                         Timestamp &after_time);
+  std::vector<Entry> get_between(Timestamp &before_time, Timestamp &after_time);
 
   /*
    * delete entry from storage

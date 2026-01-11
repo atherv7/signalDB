@@ -64,6 +64,8 @@ private:
   std::vector<Entry>
   search_in_file(std::function<bool(const Entry &)> comparison);
 
+  bool delete_from_file(Entry &entry);
+
 public:
   Storage(int capacity);
 

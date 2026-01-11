@@ -53,4 +53,22 @@ void second_test() {
   std::remove("file_storage.txt");
 }
 
-int main() { second_test(); }
+void third_test() {
+  Storage *store{new Storage(1)};
+
+  store->insert(Entry{.time = Timestamp{.hour = 0, .min = 10}, .value = 0});
+  store->insert(Entry{.time = Timestamp{.hour = 2, .min = 0}, .value = 1});
+
+  Entry entry_to_delete{Entry{
+      .time = Timestamp{.hour = 0, .min = 10},
+      .value = 0,
+  }};
+
+  bool deleted = store->delete_entry(entry_to_delete);
+
+  std::cout << "deleted: " << deleted << std::endl;
+
+  std::remove("file_storage.txt");
+}
+
+int main() { third_test(); }

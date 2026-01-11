@@ -53,6 +53,56 @@ Storage::search_in_file(std::function<bool(const Entry &)> comparison) {
   return entries;
 }
 
+bool Storage::delete_from_file(Entry &entry) {
+  std::ifstream input_file("file_storage.txt", std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading" << std::endl;
+    return false;
+  }
+
+  int size_of_entry = sizeof(Entry);
+  Entry current_entry;
+  std::vector<Entry> file_entries{};
+
+  while (input_file.read(reinterpret_cast<char *>(&current_entry),
+                         size_of_entry)) {
+    file_entries.push_back(current_entry);
+  }
+
+  input_file.close();
+  int ind_to_delete{-1};
+  for (int ind = 0; ind < file_entries.size(); ind++) {
+    if (file_entries[ind] == entry) {
+      ind_to_delete = ind;
+      break;
+    }
+  }
+
+  bool outcome = false;
+
+  if (ind_to_delete != -1) {
+    file_entries.erase(file_entries.begin() + ind_to_delete);
+    outcome = true;
+  }
+
+  std::remove("file_storage.txt");
+
+  std::ofstream output_file("file_storage.txt",
+                            std::ios::binary | std::ios::out | std::ios::trunc);
+  if (!output_file.is_open()) {
+    std::cerr << "Error opening file for writing" << std::endl;
+    return false;
+  }
+
+  for (const auto &entry : file_entries) {
+    output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
+  }
+
+  output_file.close();
+
+  return outcome;
+}
+
 void Storage::insert(Entry entry) {
   if (this->storage.size() == this->capacity) {
     flush();
@@ -114,12 +164,12 @@ bool Storage::delete_entry(Entry &entry) {
     }
   }
 
-  if (index_to_delete == -1) {
-    return false;
+  if (index_to_delete != -1) {
+    this->storage.erase(this->storage.begin() + index_to_delete);
+    return true;
+  } else {
+    return this->delete_from_file(entry);
   }
-
-  this->storage.erase(this->storage.begin() + index_to_delete);
-  return true;
 }
 
 void Storage::print_storage() {

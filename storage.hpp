@@ -1,5 +1,6 @@
 #ifndef STORAGE
 #define STORAGE
+#include <functional>
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -24,7 +25,7 @@ struct Timestamp {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Timestamp &time) {
-    os << "Timestamp(hour: " << time.hour << ", minute: " << time.min;
+    os << "Timestamp(hour: " << time.hour << ", minute: " << time.min << ")";
     return os;
   }
 };
@@ -38,7 +39,7 @@ struct Entry {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Entry &ent) {
-    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value;
+    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value << ")";
     return os;
   }
 };
@@ -52,6 +53,9 @@ private:
    * flush in-memory storage to file
    */
   void flush();
+
+  std::vector<const Entry *>
+  search_in_file(std::function<bool(const Entry &)> comparison);
 
 public:
   Storage(int capacity);

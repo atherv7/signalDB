@@ -10,11 +10,11 @@ void first_test() {
   store->insert(Entry{.time = Timestamp{.hour = 2, .min = 45}, .value = 8});
 
   Timestamp time_check = Timestamp{.hour = 0, .min = 10};
-  std::vector<const Entry *> after_35 = store->get_after(time_check);
+  std::vector<Entry> after_35 = store->get_after(time_check);
 
   std::cout << "======== After 35 =============" << std::endl;
   for (auto ent : after_35) {
-    std::cout << *ent << std::endl;
+    std::cout << ent << std::endl;
   }
 
   Entry entry_to_delete =
@@ -31,27 +31,26 @@ void first_test() {
 void second_test() {
   Storage *store{new Storage(2)};
 
-  store->insert(Entry{.time = Timestamp{.hour = 0, .min = 11}, .value = 0});
+  store->insert(Entry{.time = Timestamp{.hour = 0, .min = 13}, .value = 0});
   store->insert(Entry{.time = Timestamp{.hour = 2, .min = 10}, .value = 1});
   store->insert(Entry{.time = Timestamp{.hour = 0, .min = 21}, .value = 2});
   store->insert(Entry{.time = Timestamp{.hour = 2, .min = 20}, .value = 3});
 
   Timestamp time_check = Timestamp{.hour = 1, .min = 0};
-  std::vector<const Entry *> before = store->get_before(time_check);
-  std::cout << "======== before ==========" << std::endl;
+  std::vector<Entry> before = store->get_before(time_check);
+  std::cout << "======== before =========" << std::endl;
   for (const auto entry : before) {
-    std::cout << *entry << std::endl;
+    std::cout << entry << std::endl;
   }
 
-  std::vector<const Entry *> after = store->get_after(time_check);
+  std::vector<Entry> after = store->get_after(time_check);
   std::cout << "======= after ============" << std::endl;
   for (const auto entry : after) {
-    std::cout << *entry << std::endl;
+    std::cout << entry << std::endl;
   }
+
+  // clean file_storage.txt
+  std::remove("file_storage.txt");
 }
 
-int main() {
-  first_test();
-
-  second_test();
-}
+int main() { second_test(); }

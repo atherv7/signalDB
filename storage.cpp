@@ -6,8 +6,6 @@
 Storage::Storage(int capacity) : capacity(capacity) { this->storage = {}; }
 
 void Storage::flush() {
-  std::cout << "flushing" << std::endl;
-
   std::ofstream output_file("file_storage.txt",
                             std::ios::binary | std::ios::out | std::ios::trunc);
   if (!output_file.is_open()) {
@@ -15,7 +13,7 @@ void Storage::flush() {
     return;
   }
 
-  int size_of_entry = sizeof(struct Entry);
+  int size_of_entry = sizeof(Entry);
 
   for (const auto &entry : this->storage) {
     output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
@@ -25,9 +23,9 @@ void Storage::flush() {
   this->storage.clear();
 }
 
-std::vector<const Entry *>
+std::vector<Entry>
 Storage::search_in_file(std::function<bool(const Entry &)> comparison) {
-  std::vector<const Entry *> entries{};
+  std::vector<Entry> entries{};
 
   std::ifstream input_file("file_storage.txt", std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
@@ -35,7 +33,7 @@ Storage::search_in_file(std::function<bool(const Entry &)> comparison) {
     return entries;
   }
 
-  int size_of_entry = sizeof(struct Entry);
+  int size_of_entry = sizeof(Entry);
   Entry current_entry;
   std::vector<Entry> saved_entries{};
 
@@ -46,9 +44,9 @@ Storage::search_in_file(std::function<bool(const Entry &)> comparison) {
 
   input_file.close();
 
-  for (const auto &entry : saved_entries) {
+  for (auto entry : saved_entries) {
     if (comparison(entry)) {
-      entries.push_back(&entry);
+      entries.push_back(entry);
     }
   }
 
@@ -56,48 +54,48 @@ Storage::search_in_file(std::function<bool(const Entry &)> comparison) {
 }
 
 void Storage::insert(Entry entry) {
-  if (this->storage.size() == capacity) {
+  if (this->storage.size() == this->capacity) {
     flush();
   }
   this->storage.push_back(entry);
 }
 
-std::vector<const Entry *> Storage::get_before(Timestamp &time) {
-  std::vector<const Entry *> entries{this->search_in_file(
+std::vector<Entry> Storage::get_before(Timestamp &time) {
+  std::vector<Entry> entries{this->search_in_file(
       [&time](const Entry &entry) { return entry.time < time; })};
 
-  for (const auto &entry : this->storage) {
+  for (auto &entry : this->storage) {
     if (entry.time < time) {
-      entries.push_back(&entry);
+      entries.push_back(entry.clone());
     }
   }
 
   return entries;
 }
 
-std::vector<const Entry *> Storage::get_after(Timestamp &time) {
-  std::vector<const Entry *> entries{this->search_in_file(
+std::vector<Entry> Storage::get_after(Timestamp &time) {
+  std::vector<Entry> entries{this->search_in_file(
       [&time](const Entry &entry) { return entry.time > time; })};
 
-  for (const auto &entry : this->storage) {
+  for (auto &entry : this->storage) {
     if (entry.time > time) {
-      entries.push_back(&entry);
+      entries.push_back(entry.clone());
     }
   }
 
   return entries;
 }
 
-std::vector<const Entry *> Storage::get_between(Timestamp &before_time,
-                                                Timestamp &after_time) {
-  std::vector<const Entry *> entries{
+std::vector<Entry> Storage::get_between(Timestamp &before_time,
+                                        Timestamp &after_time) {
+  std::vector<Entry> entries{
       this->search_in_file([&before_time, &after_time](const Entry &entry) {
         return entry.time > before_time && entry.time < after_time;
       })};
 
-  for (const auto &entry : this->storage) {
+  for (auto &entry : this->storage) {
     if (entry.time > before_time && entry.time < after_time) {
-      entries.push_back(&entry);
+      entries.push_back(entry.clone());
     }
   }
 

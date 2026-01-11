@@ -42,6 +42,13 @@ struct Entry {
     os << "Entry(timestamp: " << ent.time << ", value: " << ent.value << ")";
     return os;
   }
+
+  Entry clone() {
+    return Entry{
+        .time = Timestamp{.hour = time.hour, .min = time.min},
+        .value = value,
+    };
+  }
 };
 
 class Storage {
@@ -54,7 +61,7 @@ private:
    */
   void flush();
 
-  std::vector<const Entry *>
+  std::vector<Entry>
   search_in_file(std::function<bool(const Entry &)> comparison);
 
 public:
@@ -68,18 +75,17 @@ public:
   /*
    * get entries before timestamp
    */
-  std::vector<const Entry *> get_before(Timestamp &time);
+  std::vector<Entry> get_before(Timestamp &time);
 
   /*
    * get entries after timestamp
    */
-  std::vector<const Entry *> get_after(Timestamp &time);
+  std::vector<Entry> get_after(Timestamp &time);
 
   /*
    * get entries in between timestamps
    */
-  std::vector<const Entry *> get_between(Timestamp &before_time,
-                                         Timestamp &after_time);
+  std::vector<Entry> get_between(Timestamp &before_time, Timestamp &after_time);
 
   /*
    * delete entry from storage

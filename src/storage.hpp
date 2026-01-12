@@ -94,10 +94,15 @@ public:
    */
   bool delete_entry(Entry &entry);
 
-  /*
-   * print current in memory storage
-   */
-  void print_storage();
+  std::string to_string();
+
+  friend std::ostream &operator<<(std::ostream &os, const Storage &s) {
+    for (const auto &entry : s.storage) {
+      os << entry << "\n";
+    }
+
+    return os;
+  }
 };
 
 #endif // STORAGE

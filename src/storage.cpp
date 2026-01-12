@@ -1,6 +1,7 @@
 #include "storage.hpp"
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 Storage::Storage(int capacity) : capacity(capacity) { this->storage = {}; }
@@ -172,8 +173,25 @@ bool Storage::delete_entry(Entry &entry) {
   }
 }
 
-void Storage::print_storage() {
-  for (Entry &entry : this->storage) {
-    std::cout << entry << std::endl;
+std::string Storage::to_string() {
+  std::ostringstream oss;
+  std::ifstream input_file("file_storage.txt", std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading" << std::endl;
+    return "";
   }
+
+  int size_of_entry = sizeof(Entry);
+  Entry current_entry;
+  while (input_file.read(reinterpret_cast<char *>(&current_entry),
+                         size_of_entry)) {
+    oss << current_entry << "\n";
+  }
+  input_file.close();
+
+  for (const auto &entry : this->storage) {
+    oss << entry << "\n";
+  }
+
+  return oss.str();
 }

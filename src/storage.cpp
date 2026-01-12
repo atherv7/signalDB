@@ -65,27 +65,18 @@ bool Storage::delete_from_file(Entry &entry) {
   Entry current_entry;
   std::vector<Entry> file_entries{};
 
+  bool delete_occurred = false;
+
   while (input_file.read(reinterpret_cast<char *>(&current_entry),
                          size_of_entry)) {
-    file_entries.push_back(current_entry);
-  }
-
-  input_file.close();
-  int ind_to_delete{-1};
-  for (int ind = 0; ind < file_entries.size(); ind++) {
-    if (file_entries[ind] == entry) {
-      ind_to_delete = ind;
-      break;
+    if (current_entry != entry) {
+      file_entries.push_back(current_entry);
+    } else {
+      delete_occurred = true;
     }
   }
 
-  bool outcome = false;
-
-  if (ind_to_delete != -1) {
-    file_entries.erase(file_entries.begin() + ind_to_delete);
-    outcome = true;
-  }
-
+  input_file.close();
   std::remove("file_storage.txt");
 
   std::ofstream output_file("file_storage.txt",
@@ -101,7 +92,7 @@ bool Storage::delete_from_file(Entry &entry) {
 
   output_file.close();
 
-  return outcome;
+  return delete_occurred;
 }
 
 void Storage::insert(Entry entry) {

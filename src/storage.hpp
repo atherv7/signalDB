@@ -59,6 +59,9 @@ class Storage {
 private:
   std::vector<Entry> storage;
   int capacity;
+  std::string storage_file;
+
+  bool created_file;
 
   /*
    * flush in-memory storage to file
@@ -70,13 +73,20 @@ private:
 
   bool delete_from_file(Entry &entry);
 
+  bool check_from_file(Entry &entry);
+
 public:
-  Storage(int capacity);
+  Storage(int capacity, std::string storage_file);
 
   /*
    * insert entry into storage
    */
   void insert(Entry entry);
+
+  /*
+   * get specific entry
+   */
+  bool has_entry(Entry &entry);
 
   /*
    * get entries before timestamp
@@ -98,10 +108,15 @@ public:
    */
   bool delete_entry(Entry &entry);
 
-  /*
-   * print current in memory storage
-   */
-  void print_storage();
+  std::string to_string();
+
+  friend std::ostream &operator<<(std::ostream &os, const Storage &s) {
+    for (const auto &entry : s.storage) {
+      os << entry << "\n";
+    }
+
+    return os;
+  }
 };
 
 #endif // STORAGE

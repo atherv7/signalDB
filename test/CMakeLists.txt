@@ -3,9 +3,10 @@ add_executable(storage_tests
 )
 
 target_link_libraries(storage_tests
-  storage
-  gtest
-  gtest_main
+  PRIVATE
+    storage
+    gtest
+    gtest_main
 )
 
 add_test(NAME StorageTests COMMAND storage_tests)

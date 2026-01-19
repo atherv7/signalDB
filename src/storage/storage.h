@@ -1,5 +1,6 @@
 #pragma once
 
+#include "memtable/memtable.h"
 #include "models.h"
 #include <functional>
 #include <iostream>
@@ -43,18 +44,13 @@ public:
   std::string to_string();
 
   friend std::ostream &operator<<(std::ostream &os, const Storage &s) {
-    for (const auto &entry : s.storage) {
-      os << entry << "\n";
-    }
-
+    os << s.mem_store << "\n";
     return os;
   }
 
 private:
-  std::vector<models::Entry> storage;
-  int capacity;
+  MemTable *mem_store;
   std::string storage_file;
-
   bool created_file;
 
   /*
@@ -62,10 +58,19 @@ private:
    */
   void flush();
 
+  /*
+   * search in file for entry
+   */
   std::vector<models::Entry>
   search_in_file(std::function<bool(const models::Entry &)> comparison);
 
+  /*
+   * delete entry from file, if present
+   */
   bool delete_from_file(models::Entry &entry);
 
+  /*
+   * check if entry is present in file
+   */
   bool check_from_file(models::Entry &entry);
 };

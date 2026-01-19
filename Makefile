@@ -1,6 +1,7 @@
 BUILD_DIR := build
+SRC_FILES := $(shell find src -name '*.cpp')
 
-.PHONY: all configure build test clean rebuild
+.PHONY: all configure build test clean rebuild lint
 
 all: build
 
@@ -18,3 +19,6 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 rebuild: clean all
+
+lint:
+	clang-tidy $(SRC_FILES) -- -Iinclude -std=c++20

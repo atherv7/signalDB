@@ -1,4 +1,5 @@
 #include "storage.h"
+#include "memtable/memtable.h"
 #include "models.h"
 #include <fstream>
 #include <iostream>
@@ -6,10 +7,11 @@
 #include <vector>
 
 Storage::Storage(int capacity, std::string storage_file)
-    : capacity(capacity), storage_file(storage_file), created_file(false) {
-  this->storage = {};
+    : storage_file(storage_file), created_file(false) {
+  this->mem_store = new MemTable(capacity, storage_file);
 }
 
+// TODO: change flushing to handle a flushing queue
 void Storage::flush() {
   std::ofstream output_file(storage_file,
                             std::ios::binary | std::ios::out | std::ios::trunc);
@@ -20,13 +22,12 @@ void Storage::flush() {
 
   int size_of_entry = sizeof(models::Entry);
 
-  for (const auto &entry : this->storage) {
+  for (const auto &entry : this->mem_store->get_buffer()) {
     output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
   }
 
   output_file.close();
-  this->storage.clear();
-
+  this->mem_store->clear();
   created_file = true;
 }
 
@@ -137,27 +138,17 @@ bool Storage::check_from_file(models::Entry &entry) {
   return false;
 }
 
-void Storage::insert(models::Entry entry) {
-  if (this->storage.size() == this->capacity) {
-    flush();
-  }
-  this->storage.push_back(entry);
-}
+void Storage::insert(models::Entry entry) { this->mem_store->insert(entry); }
 
 bool Storage::has_entry(models::Entry &entry) {
-  for (models::Entry &e : this->storage) {
-    if (e == entry)
-      return true;
-  }
-
-  return this->check_from_file(entry);
+  return this->mem_store->contains(entry);
 }
 
 std::vector<models::Entry> Storage::get_before(models::Timestamp &time) {
   std::vector<models::Entry> entries{this->search_in_file(
       [&time](const models::Entry &entry) { return entry.time < time; })};
 
-  for (auto &entry : this->storage) {
+  for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time < time) {
       entries.push_back(entry.clone());
     }
@@ -170,7 +161,7 @@ std::vector<models::Entry> Storage::get_after(models::Timestamp &time) {
   std::vector<models::Entry> entries{this->search_in_file(
       [&time](const models::Entry &entry) { return entry.time > time; })};
 
-  for (auto &entry : this->storage) {
+  for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > time) {
       entries.push_back(entry.clone());
     }
@@ -186,7 +177,7 @@ std::vector<models::Entry> Storage::get_between(models::Timestamp &before_time,
         return entry.time > before_time && entry.time < after_time;
       })};
 
-  for (auto &entry : this->storage) {
+  for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > before_time && entry.time < after_time) {
       entries.push_back(entry.clone());
     }
@@ -196,21 +187,7 @@ std::vector<models::Entry> Storage::get_between(models::Timestamp &before_time,
 }
 
 bool Storage::delete_entry(models::Entry &entry) {
-  int before_size = this->storage.size();
-
-  int index_to_delete = -1;
-
-  for (int ind = 0; ind < this->storage.size(); ind++) {
-    if (this->storage[ind] == entry) {
-      index_to_delete = ind;
-      break;
-    }
-  }
-
-  if (index_to_delete != -1) {
-    this->storage.erase(this->storage.begin() + index_to_delete);
-    return true;
-  } else {
+  if (!this->mem_store->delete_entry(entry)) {
     return this->delete_from_file(entry);
   }
 
@@ -219,26 +196,6 @@ bool Storage::delete_entry(models::Entry &entry) {
 
 std::string Storage::to_string() {
   std::ostringstream oss;
-
-  if (created_file) {
-    std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-    if (!input_file.is_open()) {
-      std::cerr << "Error opening file for reading" << std::endl;
-      return "";
-    }
-
-    int size_of_entry = sizeof(models::Entry);
-    models::Entry current_entry;
-    while (input_file.read(reinterpret_cast<char *>(&current_entry),
-                           size_of_entry)) {
-      oss << current_entry << "\n";
-    }
-    input_file.close();
-  }
-
-  for (const auto &entry : this->storage) {
-    oss << entry << "\n";
-  }
-
+  oss << *this->mem_store;
   return oss.str();
 }

@@ -3,8 +3,8 @@
 
 namespace models {
 struct Timestamp {
-  int hour;
-  double min;
+  int hour = -1;
+  double min = -1;
 
   bool operator==(const Timestamp &other_time) const {
     return hour == other_time.hour && min == other_time.min;
@@ -29,7 +29,7 @@ struct Timestamp {
 
 struct Entry {
   Timestamp time;
-  int value;
+  int value = -1;
 
   bool operator==(const Entry &other_entry) const {
     return time == other_entry.time && value == other_entry.value;

@@ -18,28 +18,28 @@ public:
   /*
    * get specific entry
    */
-  bool has_entry(models::Entry &entry);
+  auto has_entry(models::Entry &entry) -> bool;
 
   /*
    * get entries before timestamp
    */
-  std::vector<models::Entry> get_before(models::Timestamp &time);
+  auto get_before(models::Timestamp &time) -> std::vector<models::Entry>;
 
   /*
    * get entries after timestamp
    */
-  std::vector<models::Entry> get_after(models::Timestamp &time);
+  auto get_after(models::Timestamp &time) -> std::vector<models::Entry>;
 
   /*
    * get entries in between timestamps
    */
-  std::vector<models::Entry> get_between(models::Timestamp &before_time,
-                                         models::Timestamp &after_time);
+  auto get_between(models::Timestamp &before_time,
+                   models::Timestamp &after_time) -> std::vector<models::Entry>;
 
   /*
    * delete entry from storage
    */
-  bool delete_entry(models::Entry &entry);
+  auto delete_entry(models::Entry &entry) -> bool;
 
   std::string to_string();
 
@@ -51,13 +51,13 @@ public:
 private:
   MemTable *mem_store;
   std::string storage_file;
-  bool created_file;
+  bool created_file{false};
 
   /*
    * search in file for entry
    */
   std::vector<models::Entry>
-  search_in_file(std::function<bool(const models::Entry &)> comparison);
+  search_in_file(std::function<bool(const models::Entry &)> &comparison);
 
   /*
    * delete entry from file, if present

@@ -6,9 +6,8 @@
 #include <sstream>
 #include <vector>
 
-MemTable::MemTable(int capacity, std::string storage_file, int file_queue_cap)
-    : capacity{capacity}, storage_file{storage_file}, entry_to_write{0},
-      buffer(capacity), file_queue_cap(file_queue_cap) {}
+MemTable::MemTable(int capacity, std::string &storage_file)
+    : capacity{capacity}, storage_file{storage_file}, buffer(capacity) {}
 
 void MemTable::insert(models::Entry entry) {
   // TODO: current implementation the flushing is handled synchronously
@@ -23,7 +22,7 @@ void MemTable::insert(models::Entry entry) {
   this->entry_to_write = (this->entry_to_write + 1) % this->capacity;
 }
 
-bool MemTable::delete_entry(models::Entry &entry) {
+auto MemTable::delete_entry(models::Entry &entry) -> bool {
   std::vector<models::Entry> new_buffer(this->capacity);
   bool delete_occurred = false;
   for (models::Entry curr_entry : this->buffer) {
@@ -41,7 +40,7 @@ bool MemTable::delete_entry(models::Entry &entry) {
   return delete_occurred;
 }
 
-bool MemTable::contains(models::Entry &entry) {
+auto MemTable::contains(models::Entry &entry) -> bool {
   if (this->contains_file) {
     // TODO: start another thread for file search to prevent
     // buffer search from being blocked
@@ -56,7 +55,9 @@ bool MemTable::contains(models::Entry &entry) {
   return false;
 }
 
-std::vector<models::Entry> &MemTable::get_buffer() { return this->buffer; }
+auto MemTable::get_buffer() -> std::vector<models::Entry> & {
+  return this->buffer;
+}
 
 void MemTable::clear() { this->buffer.clear(); }
 

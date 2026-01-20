@@ -6,15 +6,16 @@
 #include <sstream>
 #include <vector>
 
-MemTable::MemTable(int capacity, std::string &storage_file)
-    : capacity{capacity}, storage_file{storage_file}, buffer(capacity) {}
+MemTable::MemTable(int capacity, std::string &storage_file, int file_queue_cap)
+    : capacity{capacity}, storage_file{storage_file}, buffer(capacity),
+      file_queue_cap(file_queue_cap) {}
 
 void MemTable::insert(models::Entry entry) {
   // TODO: current implementation the flushing is handled synchronously
   // change so it is handled asynchronously
   if (this->buffer[this->entry_to_write] != models::Entry{}) {
     this->write_to_file_queue.push_back(this->buffer[this->entry_to_write]);
-    if (this->write_to_file_queue.size() == this->file_queue_cap) {
+    if (this->write_to_file_queue.size() >= this->file_queue_cap) {
       this->flush_to_file();
     }
   }
@@ -44,7 +45,7 @@ auto MemTable::contains(models::Entry &entry) -> bool {
   if (this->contains_file) {
     // TODO: start another thread for file search to prevent
     // buffer search from being blocked
-    this->search_in_file(entry);
+    return this->has_in_file(entry);
   }
   for (models::Entry &curr_entry : this->buffer) {
     if (curr_entry == entry) {
@@ -77,13 +78,14 @@ void MemTable::write_to_file(std::vector<models::Entry> &entries) {
   output_file.close();
 
   this->clear();
+}
 
+void MemTable::flush_to_file() {
+  this->write_to_file(this->buffer);
   this->contains_file = true;
 }
 
-void MemTable::flush_to_file() { this->write_to_file(this->buffer); }
-
-bool MemTable::search_in_file(models::Entry &entry) {
+bool MemTable::has_in_file(models::Entry &entry) {
   std::ifstream input_file(this->storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
     std::cerr << "Error: unable to open file for reading\n";
@@ -131,4 +133,34 @@ bool MemTable::delete_from_file(models::Entry &entry) {
   this->write_to_file(file_entries);
 
   return delete_occurred;
+}
+
+auto MemTable::search_in_file(
+    std::function<bool(const models::Entry &)> &comparison)
+    -> std::vector<models::Entry> {
+  std::vector<models::Entry> entries{};
+
+  if (!this->contains_file) {
+    return entries;
+  }
+
+  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading\n";
+    return entries;
+  }
+
+  int size_of_entry = sizeof(models::Entry);
+  models::Entry current_entry;
+  std::vector<models::Entry> saved_entries{};
+
+  while (input_file.read(reinterpret_cast<char *>(&current_entry),
+                         size_of_entry)) {
+    if (comparison(current_entry)) {
+      entries.push_back(current_entry);
+    }
+  }
+  input_file.close();
+
+  return entries;
 }

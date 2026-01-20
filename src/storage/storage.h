@@ -8,7 +8,7 @@
 
 class Storage {
 public:
-  Storage(int capacity, std::string storage_file);
+  Storage(int capacity, int file_queue_cap, std::string storage_file);
 
   /*
    * insert entry into storage

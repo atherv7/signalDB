@@ -5,7 +5,7 @@
 
 class MemTable {
 public:
-  MemTable(int capacity, std::string storage_file);
+  MemTable(int capacity, std::string &storage_file);
 
   /*
    * insert entry to memtable
@@ -15,17 +15,17 @@ public:
   /*
    * delete entry from memtable
    */
-  bool delete_entry(models::Entry &entry);
+  auto delete_entry(models::Entry &entry) -> bool;
 
   /*
    * check if buffer contains entry
    */
-  bool contains(models::Entry &entry);
+  auto contains(models::Entry &entry) -> bool;
 
   /*
    * get reference of buffer
    */
-  std::vector<models::Entry> &get_buffer();
+  auto get_buffer() -> std::vector<models::Entry> &;
 
   /*
    *
@@ -43,7 +43,7 @@ public:
 private:
   std::vector<models::Entry> buffer;
   std::string storage_file;
-  int entry_to_write;
+  int entry_to_write{0};
   int capacity;
   std::vector<models::Entry> write_to_file_queue;
 };

@@ -2,12 +2,13 @@
 #include "memtable/memtable.h"
 #include "models.h"
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
 Storage::Storage(int capacity, std::string storage_file)
-    : storage_file(storage_file), created_file(false) {
+    : storage_file(storage_file) {
   this->mem_store = new MemTable(capacity, storage_file);
 }
 
@@ -16,7 +17,7 @@ void Storage::flush() {
   std::ofstream output_file(storage_file,
                             std::ios::binary | std::ios::out | std::ios::trunc);
   if (!output_file.is_open()) {
-    std::cerr << "Error opening file for writing" << std::endl;
+    std::cerr << "Error opening file for writing\n";
     return;
   }
 
@@ -31,8 +32,9 @@ void Storage::flush() {
   created_file = true;
 }
 
-std::vector<models::Entry>
-Storage::search_in_file(std::function<bool(const models::Entry &)> comparison) {
+auto Storage::search_in_file(
+    std::function<bool(const models::Entry &)> &comparison)
+    -> std::vector<models::Entry> {
   std::vector<models::Entry> entries{};
 
   if (!created_file) {
@@ -41,7 +43,7 @@ Storage::search_in_file(std::function<bool(const models::Entry &)> comparison) {
 
   std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading" << std::endl;
+    std::cerr << "Error opening file for reading\n";
     return entries;
   }
 
@@ -65,14 +67,14 @@ Storage::search_in_file(std::function<bool(const models::Entry &)> comparison) {
   return entries;
 }
 
-bool Storage::delete_from_file(models::Entry &entry) {
+auto Storage::delete_from_file(models::Entry &entry) -> bool {
   if (!created_file) {
     return false;
   }
 
   std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading" << std::endl;
+    std::cerr << "Error opening file for reading\n";
     return false;
   }
 
@@ -97,7 +99,7 @@ bool Storage::delete_from_file(models::Entry &entry) {
   std::ofstream output_file(storage_file,
                             std::ios::binary | std::ios::out | std::ios::trunc);
   if (!output_file.is_open()) {
-    std::cerr << "Error opening file for writing" << std::endl;
+    std::cerr << "Error opening file for writing\n";
     return false;
   }
 
@@ -110,14 +112,14 @@ bool Storage::delete_from_file(models::Entry &entry) {
   return delete_occurred;
 }
 
-bool Storage::check_from_file(models::Entry &entry) {
+auto Storage::check_from_file(models::Entry &entry) -> bool {
   if (!created_file) {
     return false;
   }
 
   std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading" << std::endl;
+    std::cerr << "Error opening file for reading\n";
     return false;
   }
 
@@ -140,13 +142,15 @@ bool Storage::check_from_file(models::Entry &entry) {
 
 void Storage::insert(models::Entry entry) { this->mem_store->insert(entry); }
 
-bool Storage::has_entry(models::Entry &entry) {
+auto Storage::has_entry(models::Entry &entry) -> bool {
   return this->mem_store->contains(entry);
 }
 
-std::vector<models::Entry> Storage::get_before(models::Timestamp &time) {
-  std::vector<models::Entry> entries{this->search_in_file(
-      [&time](const models::Entry &entry) { return entry.time < time; })};
+auto Storage::get_before(models::Timestamp &time)
+    -> std::vector<models::Entry> {
+  std::function<bool(const models::Entry &)> search_func =
+      [&time](const models::Entry &entry) { return entry.time < time; };
+  std::vector<models::Entry> entries{this->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time < time) {
@@ -158,8 +162,9 @@ std::vector<models::Entry> Storage::get_before(models::Timestamp &time) {
 }
 
 std::vector<models::Entry> Storage::get_after(models::Timestamp &time) {
-  std::vector<models::Entry> entries{this->search_in_file(
-      [&time](const models::Entry &entry) { return entry.time > time; })};
+  std::function<bool(const models::Entry &)> search_func =
+      [&time](const models::Entry &entry) { return entry.time > time; };
+  std::vector<models::Entry> entries{this->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > time) {
@@ -170,12 +175,14 @@ std::vector<models::Entry> Storage::get_after(models::Timestamp &time) {
   return entries;
 }
 
-std::vector<models::Entry> Storage::get_between(models::Timestamp &before_time,
-                                                models::Timestamp &after_time) {
-  std::vector<models::Entry> entries{this->search_in_file(
+auto Storage::get_between(models::Timestamp &before_time,
+                          models::Timestamp &after_time)
+    -> std::vector<models::Entry> {
+  std::function<bool(const models::Entry &)> search_func =
       [&before_time, &after_time](const models::Entry &entry) {
         return entry.time > before_time && entry.time < after_time;
-      })};
+      };
+  std::vector<models::Entry> entries{this->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > before_time && entry.time < after_time) {
@@ -186,7 +193,7 @@ std::vector<models::Entry> Storage::get_between(models::Timestamp &before_time,
   return entries;
 }
 
-bool Storage::delete_entry(models::Entry &entry) {
+auto Storage::delete_entry(models::Entry &entry) -> bool {
   if (!this->mem_store->delete_entry(entry)) {
     return this->delete_from_file(entry);
   }
@@ -194,7 +201,7 @@ bool Storage::delete_entry(models::Entry &entry) {
   return false;
 }
 
-std::string Storage::to_string() {
+auto Storage::to_string() -> std::string {
   std::ostringstream oss;
   oss << *this->mem_store;
   return oss.str();

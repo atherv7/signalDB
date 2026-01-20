@@ -4,19 +4,18 @@
 #include <sstream>
 #include <vector>
 
-MemTable::MemTable(int capacity, std::string storage_file)
-    : capacity{capacity}, storage_file{storage_file}, entry_to_write{0},
-      buffer(capacity) {}
+MemTable::MemTable(int capacity, std::string &storage_file)
+    : capacity{capacity}, storage_file{storage_file}, buffer(capacity) {}
 
 void MemTable::insert(models::Entry entry) {
   if (this->buffer[this->entry_to_write] != models::Entry{}) {
-    std::cout << "not empty, need to flush" << std::endl;
+    std::cout << "not empty, need to flush\n";
   }
   this->buffer[this->entry_to_write] = entry;
   this->entry_to_write = (this->entry_to_write + 1) % this->capacity;
 }
 
-bool MemTable::delete_entry(models::Entry &entry) {
+auto MemTable::delete_entry(models::Entry &entry) -> bool {
   std::vector<models::Entry> new_buffer(this->capacity);
   bool delete_occurred = false;
   for (models::Entry curr_entry : this->buffer) {
@@ -34,7 +33,7 @@ bool MemTable::delete_entry(models::Entry &entry) {
   return delete_occurred;
 }
 
-bool MemTable::contains(models::Entry &entry) {
+auto MemTable::contains(models::Entry &entry) -> bool {
   for (models::Entry &curr_entry : this->buffer) {
     if (curr_entry == entry) {
       return true;
@@ -44,6 +43,8 @@ bool MemTable::contains(models::Entry &entry) {
   return false;
 }
 
-std::vector<models::Entry> &MemTable::get_buffer() { return this->buffer; }
+auto MemTable::get_buffer() -> std::vector<models::Entry> & {
+  return this->buffer;
+}
 
 void MemTable::clear() { this->buffer.clear(); }

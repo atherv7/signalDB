@@ -54,11 +54,6 @@ private:
   bool created_file;
 
   /*
-   * flush in-memory storage to file
-   */
-  void flush();
-
-  /*
    * search in file for entry
    */
   std::vector<models::Entry>

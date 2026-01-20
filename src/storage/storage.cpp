@@ -8,61 +8,7 @@
 
 Storage::Storage(int capacity, std::string storage_file)
     : storage_file(storage_file), created_file(false) {
-  this->mem_store = new MemTable(capacity, storage_file);
-}
-
-// TODO: change flushing to handle a flushing queue
-void Storage::flush() {
-  std::ofstream output_file(storage_file,
-                            std::ios::binary | std::ios::out | std::ios::trunc);
-  if (!output_file.is_open()) {
-    std::cerr << "Error opening file for writing" << std::endl;
-    return;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-
-  for (const auto &entry : this->mem_store->get_buffer()) {
-    output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
-  }
-
-  output_file.close();
-  this->mem_store->clear();
-  created_file = true;
-}
-
-std::vector<models::Entry>
-Storage::search_in_file(std::function<bool(const models::Entry &)> comparison) {
-  std::vector<models::Entry> entries{};
-
-  if (!created_file) {
-    return entries;
-  }
-
-  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-  if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading" << std::endl;
-    return entries;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries{};
-
-  while (input_file.read(reinterpret_cast<char *>(&current_entry),
-                         size_of_entry)) {
-    saved_entries.push_back(current_entry);
-  }
-
-  input_file.close();
-
-  for (auto entry : saved_entries) {
-    if (comparison(entry)) {
-      entries.push_back(entry);
-    }
-  }
-
-  return entries;
+  this->mem_store = new MemTable(capacity, storage_file, 2);
 }
 
 bool Storage::delete_from_file(models::Entry &entry) {

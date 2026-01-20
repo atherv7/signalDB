@@ -20,5 +20,5 @@ clean:
 
 rebuild: clean all
 
-lint:
-	clang-tidy $(SRC_FILES) -- -Iinclude -std=c++20
+lint: configure
+	clang-tidy $(SRC_FILES) -p $(BUILD_DIR)

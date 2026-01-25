@@ -7,64 +7,9 @@
 #include <sstream>
 #include <vector>
 
-Storage::Storage(int capacity, std::string storage_file)
+Storage::Storage(int capacity, int file_queue_cap, std::string storage_file)
     : storage_file(storage_file) {
-  this->mem_store = new MemTable(capacity, storage_file);
-}
-
-// TODO: change flushing to handle a flushing queue
-void Storage::flush() {
-  std::ofstream output_file(storage_file,
-                            std::ios::binary | std::ios::out | std::ios::trunc);
-  if (!output_file.is_open()) {
-    std::cerr << "Error opening file for writing\n";
-    return;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-
-  for (const auto &entry : this->mem_store->get_buffer()) {
-    output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
-  }
-
-  output_file.close();
-  this->mem_store->clear();
-  created_file = true;
-}
-
-auto Storage::search_in_file(
-    std::function<bool(const models::Entry &)> &comparison)
-    -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries{};
-
-  if (!created_file) {
-    return entries;
-  }
-
-  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-  if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading\n";
-    return entries;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries{};
-
-  while (input_file.read(reinterpret_cast<char *>(&current_entry),
-                         size_of_entry)) {
-    saved_entries.push_back(current_entry);
-  }
-
-  input_file.close();
-
-  for (auto entry : saved_entries) {
-    if (comparison(entry)) {
-      entries.push_back(entry);
-    }
-  }
-
-  return entries;
+  this->mem_store = new MemTable(capacity, storage_file, file_queue_cap);
 }
 
 auto Storage::delete_from_file(models::Entry &entry) -> bool {
@@ -150,7 +95,8 @@ auto Storage::get_before(models::Timestamp &time)
     -> std::vector<models::Entry> {
   std::function<bool(const models::Entry &)> search_func =
       [&time](const models::Entry &entry) { return entry.time < time; };
-  std::vector<models::Entry> entries{this->search_in_file(search_func)};
+  std::vector<models::Entry> entries{
+      this->mem_store->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time < time) {
@@ -164,7 +110,8 @@ auto Storage::get_before(models::Timestamp &time)
 std::vector<models::Entry> Storage::get_after(models::Timestamp &time) {
   std::function<bool(const models::Entry &)> search_func =
       [&time](const models::Entry &entry) { return entry.time > time; };
-  std::vector<models::Entry> entries{this->search_in_file(search_func)};
+  std::vector<models::Entry> entries{
+      this->mem_store->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > time) {
@@ -182,7 +129,8 @@ auto Storage::get_between(models::Timestamp &before_time,
       [&before_time, &after_time](const models::Entry &entry) {
         return entry.time > before_time && entry.time < after_time;
       };
-  std::vector<models::Entry> entries{this->search_in_file(search_func)};
+  std::vector<models::Entry> entries{
+      this->mem_store->search_in_file(search_func)};
 
   for (auto &entry : this->mem_store->get_buffer()) {
     if (entry.time > before_time && entry.time < after_time) {

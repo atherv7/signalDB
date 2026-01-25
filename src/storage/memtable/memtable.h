@@ -1,11 +1,12 @@
 #pragma once
 #include "storage/models.h"
+#include <functional>
 #include <string>
 #include <vector>
 
 class MemTable {
 public:
-  MemTable(int capacity, std::string &storage_file);
+  MemTable(int capacity, std::string &storage_file, int file_queue_cap);
 
   /*
    * insert entry to memtable
@@ -28,7 +29,7 @@ public:
   auto get_buffer() -> std::vector<models::Entry> &;
 
   /*
-   *
+   *  clear the buffer
    */
   void clear();
 
@@ -40,10 +41,26 @@ public:
     return os;
   }
 
+  auto search_in_file(std::function<bool(const models::Entry &)> &comparison)
+      -> std::vector<models::Entry>;
+
 private:
   std::vector<models::Entry> buffer;
   std::string storage_file;
   int entry_to_write{0};
   int capacity;
   std::vector<models::Entry> write_to_file_queue;
+  int file_queue_cap;
+  bool contains_file{false};
+
+  /*
+   * flush entries to file
+   */
+  void flush_to_file();
+
+  void write_to_file(std::vector<models::Entry> &entries);
+
+  bool has_in_file(models::Entry &entry);
+
+  bool delete_from_file(models::Entry &entry);
 };

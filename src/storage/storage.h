@@ -8,7 +8,7 @@
 
 class Storage {
 public:
-  Storage(int capacity, std::string storage_file);
+  Storage(int capacity, int file_queue_cap, std::string storage_file);
 
   /*
    * insert entry into storage
@@ -52,11 +52,6 @@ private:
   MemTable *mem_store;
   std::string storage_file;
   bool created_file{false};
-
-  /*
-   * flush in-memory storage to file
-   */
-  void flush();
 
   /*
    * search in file for entry

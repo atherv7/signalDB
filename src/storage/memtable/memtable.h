@@ -1,7 +1,11 @@
 #pragma once
 #include "storage/models.h"
+#include <condition_variable>
 #include <functional>
+#include <mutex>
+#include <stop_token>
 #include <string>
+#include <thread>
 #include <vector>
 
 class MemTable {
@@ -50,15 +54,19 @@ private:
   int entry_to_write{0};
   int capacity;
   std::vector<models::Entry> write_to_file_queue;
+  std::mutex file_queue_mutex;
+  std::jthread file_flush_thread;
   int file_queue_cap;
   bool contains_file{false};
+  std::condition_variable_any cond_var;
 
   /*
    * flush entries to file
    */
-  void flush_to_file();
+  void flush_to_file(std::stop_token stoken);
 
-  void write_to_file(std::vector<models::Entry> &entries);
+  void write_to_file(std::vector<models::Entry> &entries,
+                     std::ofstream &output_file);
 
   bool has_in_file(models::Entry &entry);
 

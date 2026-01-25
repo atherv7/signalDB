@@ -19,7 +19,8 @@ void MemTable::insert(models::Entry entry) {
       this->flush_to_file();
     }
   }
-  this->buffer[this->entry_to_write] = entry;
+
+  this->buffer.at(this->entry_to_write) = entry;
   this->entry_to_write = (this->entry_to_write + 1) % this->capacity;
 }
 
@@ -36,7 +37,11 @@ auto MemTable::delete_entry(models::Entry &entry) -> bool {
 
   this->buffer = new_buffer;
 
-  this->entry_to_write--;
+  if (!delete_occurred) {
+    delete_occurred = this->delete_from_file(entry);
+  } else {
+    this->entry_to_write--;
+  }
 
   return delete_occurred;
 }
@@ -60,7 +65,10 @@ auto MemTable::get_buffer() -> std::vector<models::Entry> & {
   return this->buffer;
 }
 
-void MemTable::clear() { this->buffer.clear(); }
+void MemTable::clear() {
+  this->buffer.clear();
+  this->buffer.assign(this->capacity, models::Entry{});
+}
 
 void MemTable::write_to_file(std::vector<models::Entry> &entries) {
   std::ofstream output_file(this->storage_file,
@@ -77,11 +85,11 @@ void MemTable::write_to_file(std::vector<models::Entry> &entries) {
   }
   output_file.close();
 
-  this->clear();
+  entries.clear();
 }
 
 void MemTable::flush_to_file() {
-  this->write_to_file(this->buffer);
+  this->write_to_file(this->write_to_file_queue);
   this->contains_file = true;
 }
 

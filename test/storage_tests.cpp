@@ -1,8 +1,10 @@
 #include "storage/models.h"
 #include "storage/storage.h"
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -174,6 +176,8 @@ TEST(StorageTest, HasEntryInFile) {
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
                               .value = 5});
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
   models::Entry entry_in_file =
       models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2};
 
@@ -189,6 +193,8 @@ TEST(StorageTest, GetBeforeInFile) {
                               .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
                               .value = 5});
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   models::Timestamp time = models::Timestamp{.hour = 1, .min = 0};
   std::vector<models::Entry> before_entries = store->get_before(time);
@@ -207,6 +213,8 @@ TEST(StorageTest, GetAfterInFile) {
                               .value = 5});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
                               .value = 2});
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   models::Timestamp time = models::Timestamp{.hour = 1, .min = 0};
   std::vector<models::Entry> before_entries = store->get_after(time);
@@ -232,6 +240,8 @@ TEST(StorageTest, GetBetweenInFile) {
   store->insert(first_entry);
   store->insert(second_entry);
 
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
   models::Timestamp before_time = models::Timestamp{.hour = 0, .min = 0};
   models::Timestamp after_time = models::Timestamp{.hour = 5, .min = 0};
 
@@ -253,6 +263,8 @@ TEST(StorageTest, DeleteEntryInFile) {
                               .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
                               .value = 5});
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   models::Entry entry_to_delete =
       models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2};

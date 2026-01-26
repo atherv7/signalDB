@@ -88,6 +88,7 @@ void MemTable::write_to_file(std::vector<models::Entry> &entries,
   output_file.close();
 
   entries.clear();
+  this->contains_file = true;
 }
 
 void MemTable::flush_to_file(std::stop_token stoken) {
@@ -104,7 +105,6 @@ void MemTable::flush_to_file(std::stop_token stoken) {
       if (this->write_to_file_queue.empty()) {
         continue;
       }
-
       batch = std::move(this->write_to_file_queue);
       this->write_to_file_queue.clear();
     }

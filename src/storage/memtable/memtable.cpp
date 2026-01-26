@@ -3,21 +3,23 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <mutex>
 #include <sstream>
+#include <stop_token>
+#include <thread>
 #include <vector>
 
 MemTable::MemTable(int capacity, std::string &storage_file, int file_queue_cap)
     : capacity{capacity}, storage_file{storage_file}, buffer(capacity),
-      file_queue_cap(file_queue_cap) {}
+      file_queue_cap(file_queue_cap) {
+  this->file_flush_thread = std::jthread(
+      [this](std::stop_token stoken) { this->flush_to_file(stoken); });
+}
 
 void MemTable::insert(models::Entry entry) {
-  // TODO: current implementation the flushing is handled synchronously
-  // change so it is handled asynchronously
   if (this->buffer[this->entry_to_write] != models::Entry{}) {
+    std::lock_guard<std::mutex> lock(this->file_queue_mutex);
     this->write_to_file_queue.push_back(this->buffer[this->entry_to_write]);
-    if (this->write_to_file_queue.size() >= this->file_queue_cap) {
-      this->flush_to_file();
-    }
   }
 
   this->buffer.at(this->entry_to_write) = entry;
@@ -70,9 +72,9 @@ void MemTable::clear() {
   this->buffer.assign(this->capacity, models::Entry{});
 }
 
-void MemTable::write_to_file(std::vector<models::Entry> &entries) {
-  std::ofstream output_file(this->storage_file,
-                            std::ios::binary | std::ios::out | std::ios::trunc);
+void MemTable::write_to_file(std::vector<models::Entry> &entries,
+                             std::ofstream &output_file) {
+
   if (!output_file.is_open()) {
     std::cerr << "Error: unable to open file for writing\n";
     return;
@@ -86,11 +88,28 @@ void MemTable::write_to_file(std::vector<models::Entry> &entries) {
   output_file.close();
 
   entries.clear();
+  this->contains_file = true;
 }
 
-void MemTable::flush_to_file() {
-  this->write_to_file(this->write_to_file_queue);
-  this->contains_file = true;
+void MemTable::flush_to_file(std::stop_token stoken) {
+  std::ofstream output_file(this->storage_file,
+                            std::ios::binary | std::ios::out | std::ios::trunc);
+
+  while (!stoken.stop_requested()) {
+    std::vector<models::Entry> batch;
+    {
+      std::unique_lock<std::mutex> lock{this->file_queue_mutex};
+      cond_var.wait(lock, stoken,
+                    [this] { return !this->write_to_file_queue.empty(); });
+
+      if (this->write_to_file_queue.empty()) {
+        continue;
+      }
+      batch = std::move(this->write_to_file_queue);
+      this->write_to_file_queue.clear();
+    }
+    this->write_to_file(batch, output_file);
+  }
 }
 
 bool MemTable::has_in_file(models::Entry &entry) {
@@ -138,7 +157,9 @@ bool MemTable::delete_from_file(models::Entry &entry) {
   input_file.close();
   std::remove(this->storage_file.c_str());
 
-  this->write_to_file(file_entries);
+  std::ofstream output_file(this->storage_file,
+                            std::ios::binary | std::ios::out | std::ios::trunc);
+  this->write_to_file(file_entries, output_file);
 
   return delete_occurred;
 }

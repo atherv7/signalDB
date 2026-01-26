@@ -1,5 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <fstream>
+#include <functional>
 
 namespace models {
 struct Timestamp {
@@ -50,5 +52,9 @@ struct Entry {
         .value = value,
     };
   }
+};
+
+struct Task {
+  std::function<bool(const models::Entry &)> comparison;
 };
 } // namespace models

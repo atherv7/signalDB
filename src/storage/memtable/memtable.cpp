@@ -1,5 +1,6 @@
 #include "memtable.h"
 #include "storage/models.h"
+#include <cinttypes>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -14,6 +15,8 @@ MemTable::MemTable(int capacity, std::string &storage_file, int file_queue_cap)
       file_queue_cap(file_queue_cap) {
   this->file_flush_thread = std::jthread(
       [this](std::stop_token stoken) { this->flush_to_file(stoken); });
+  this->file_search_thread = std::jthread(
+      [this](std::stop_token stoken) { this->file_searching(stoken); });
 }
 
 void MemTable::insert(models::Entry entry) {
@@ -99,8 +102,8 @@ void MemTable::flush_to_file(std::stop_token stoken) {
     std::vector<models::Entry> batch;
     {
       std::unique_lock<std::mutex> lock{this->file_queue_mutex};
-      cond_var.wait(lock, stoken,
-                    [this] { return !this->write_to_file_queue.empty(); });
+      this->flush_cond_var.wait(
+          lock, stoken, [this] { return !this->write_to_file_queue.empty(); });
 
       if (this->write_to_file_queue.empty()) {
         continue;
@@ -192,4 +195,39 @@ auto MemTable::search_in_file(
   input_file.close();
 
   return entries;
+}
+
+// TODO: need to implement a mutex for file writing and reading
+//  to ensure no race condition
+void MemTable::file_searching(std::stop_token stoken) {
+  std::ifstream input_file(this->storage_file, std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading\n";
+    return;
+  }
+
+  while (!stoken.stop_requested()) {
+    std::vector<models::Task> batch;
+    {
+      std::unique_lock<std::mutex> lock{this->file_search_mutex};
+      this->search_cond_var.wait(
+          lock, stoken, [this] { return !this->file_search_queue.empty(); });
+
+      if (this->file_search_queue.empty()) {
+        continue;
+      }
+
+      batch = std::move(this->file_search_queue);
+      this->file_search_queue.clear();
+    }
+
+    for (auto &task : batch) {
+      std::vector<models::Entry> entries =
+          this->search_in_file(task.comparison);
+
+      // TODO: need to determine how to return results to task dispatcher
+    }
+  }
+
+  input_file.close();
 }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "storage/models.h"
 #include <condition_variable>
 #include <functional>
@@ -58,7 +59,11 @@ private:
   std::jthread file_flush_thread;
   int file_queue_cap;
   bool contains_file{false};
-  std::condition_variable_any cond_var;
+  std::condition_variable_any flush_cond_var;
+  std::jthread file_search_thread;
+  std::mutex file_search_mutex;
+  std::vector<models::Task> file_search_queue;
+  std::condition_variable_any search_cond_var;
 
   /*
    * flush entries to file
@@ -71,4 +76,6 @@ private:
   bool has_in_file(models::Entry &entry);
 
   bool delete_from_file(models::Entry &entry);
+
+  void file_searching(std::stop_token stoken);
 };

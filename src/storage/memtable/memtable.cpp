@@ -1,4 +1,5 @@
 #include "memtable.h"
+#include "storage/file_management/file_management.h"
 #include "storage/models.h"
 #include <cinttypes>
 #include <fstream>
@@ -10,19 +11,15 @@
 #include <thread>
 #include <vector>
 
+// TODO: remove file_queue_cap class member
 MemTable::MemTable(int capacity, std::string &storage_file, int file_queue_cap)
-    : capacity{capacity}, storage_file{storage_file}, buffer(capacity),
-      file_queue_cap(file_queue_cap) {
-  this->file_flush_thread = std::jthread(
-      [this](std::stop_token stoken) { this->flush_to_file(stoken); });
-  this->file_search_thread = std::jthread(
-      [this](std::stop_token stoken) { this->file_searching(stoken); });
+    : capacity{capacity}, buffer(capacity) {
+  this->file_manage = new FileManagement(storage_file, file_queue_cap);
 }
 
 void MemTable::insert(models::Entry entry) {
   if (this->buffer[this->entry_to_write] != models::Entry{}) {
-    std::lock_guard<std::mutex> lock(this->file_queue_mutex);
-    this->write_to_file_queue.push_back(this->buffer[this->entry_to_write]);
+    this->file_manage->insert_flush_queue(this->buffer[this->entry_to_write]);
   }
 
   this->buffer.at(this->entry_to_write) = entry;
@@ -75,46 +72,6 @@ void MemTable::clear() {
   this->buffer.assign(this->capacity, models::Entry{});
 }
 
-void MemTable::write_to_file(std::vector<models::Entry> &entries,
-                             std::ofstream &output_file) {
-
-  if (!output_file.is_open()) {
-    std::cerr << "Error: unable to open file for writing\n";
-    return;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-
-  for (const auto &entry : entries) {
-    output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
-  }
-  output_file.close();
-
-  entries.clear();
-  this->contains_file = true;
-}
-
-void MemTable::flush_to_file(std::stop_token stoken) {
-  std::ofstream output_file(this->storage_file,
-                            std::ios::binary | std::ios::out | std::ios::trunc);
-
-  while (!stoken.stop_requested()) {
-    std::vector<models::Entry> batch;
-    {
-      std::unique_lock<std::mutex> lock{this->file_queue_mutex};
-      this->flush_cond_var.wait(
-          lock, stoken, [this] { return !this->write_to_file_queue.empty(); });
-
-      if (this->write_to_file_queue.empty()) {
-        continue;
-      }
-      batch = std::move(this->write_to_file_queue);
-      this->write_to_file_queue.clear();
-    }
-    this->write_to_file(batch, output_file);
-  }
-}
-
 bool MemTable::has_in_file(models::Entry &entry) {
   std::ifstream input_file(this->storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
@@ -165,69 +122,4 @@ bool MemTable::delete_from_file(models::Entry &entry) {
   this->write_to_file(file_entries, output_file);
 
   return delete_occurred;
-}
-
-auto MemTable::search_in_file(
-    std::function<bool(const models::Entry &)> &comparison)
-    -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries{};
-
-  if (!this->contains_file) {
-    return entries;
-  }
-
-  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-  if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading\n";
-    return entries;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries{};
-
-  while (input_file.read(reinterpret_cast<char *>(&current_entry),
-                         size_of_entry)) {
-    if (comparison(current_entry)) {
-      entries.push_back(current_entry);
-    }
-  }
-  input_file.close();
-
-  return entries;
-}
-
-// TODO: need to implement a mutex for file writing and reading
-//  to ensure no race condition
-void MemTable::file_searching(std::stop_token stoken) {
-  std::ifstream input_file(this->storage_file, std::ios::binary | std::ios::in);
-  if (!input_file.is_open()) {
-    std::cerr << "Error opening file for reading\n";
-    return;
-  }
-
-  while (!stoken.stop_requested()) {
-    std::vector<models::Task> batch;
-    {
-      std::unique_lock<std::mutex> lock{this->file_search_mutex};
-      this->search_cond_var.wait(
-          lock, stoken, [this] { return !this->file_search_queue.empty(); });
-
-      if (this->file_search_queue.empty()) {
-        continue;
-      }
-
-      batch = std::move(this->file_search_queue);
-      this->file_search_queue.clear();
-    }
-
-    for (auto &task : batch) {
-      std::vector<models::Entry> entries =
-          this->search_in_file(task.comparison);
-
-      // TODO: need to determine how to return results to task dispatcher
-    }
-  }
-
-  input_file.close();
 }

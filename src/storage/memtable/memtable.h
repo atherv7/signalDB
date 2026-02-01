@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storage/file_management/file_management.h"
 #include "storage/models.h"
 #include <condition_variable>
 #include <functional>
@@ -51,19 +52,9 @@ public:
 
 private:
   std::vector<models::Entry> buffer;
-  std::string storage_file;
   int entry_to_write{0};
   int capacity;
-  std::vector<models::Entry> write_to_file_queue;
-  std::mutex file_queue_mutex;
-  std::jthread file_flush_thread;
-  int file_queue_cap;
-  bool contains_file{false};
-  std::condition_variable_any flush_cond_var;
-  std::jthread file_search_thread;
-  std::mutex file_search_mutex;
-  std::vector<models::Task> file_search_queue;
-  std::condition_variable_any search_cond_var;
+  FileManagement *file_manage;
 
   /*
    * flush entries to file

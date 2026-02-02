@@ -9,6 +9,86 @@
 #include <utility>
 #include <vector>
 
+auto FileManagement::has_in_file(models::Entry &entry)
+    -> std::future<std::vector<models::Entry>> {
+  std::promise<std::vector<models::Entry>> result;
+  std::future<std::vector<models::Entry>> fut = result.get_future();
+  models::Task t{[&entry](const models::Entry &e) { return e == entry; }};
+
+  this->file_search_queue.emplace_back(std::move(t), std::move(result));
+
+  return fut;
+}
+
+auto FileManagement::get_before(models::Timestamp &time)
+    -> std::future<std::vector<models::Entry>> {
+  std::promise<std::vector<models::Entry>> result;
+  std::future<std::vector<models::Entry>> fut = result.get_future();
+  models::Task t{
+      [&time](const models::Entry &entry) { return entry.time < time; }};
+
+  this->file_search_queue.emplace_back(std::move(t), std::move(result));
+
+  return fut;
+}
+
+auto FileManagement::get_after(models::Timestamp &time)
+    -> std::future<std::vector<models::Entry>> {
+  std::promise<std::vector<models::Entry>> result;
+  std::future<std::vector<models::Entry>> fut = result.get_future();
+
+  models::Task t{
+      [&time](const models::Entry &entry) { return entry.time > time; }};
+
+  this->file_search_queue.emplace_back(std::move(t), std::move(result));
+
+  return fut;
+}
+
+auto FileManagement::get_between(models::Timestamp &before_time,
+                                 models::Timestamp &after_time)
+    -> std::future<std::vector<models::Entry>> {
+  std::promise<std::vector<models::Entry>> result;
+  std::future<std::vector<models::Entry>> fut = result.get_future();
+
+  models::Task t{[&before_time, &after_time](const models::Entry &entry) {
+    return entry.time < after_time && entry.time < before_time;
+  }};
+
+  this->file_search_queue.emplace_back(std::move(t), std::move(result));
+
+  return fut;
+}
+
+void FileManagement::file_search(std::stop_token stoken) {
+  std::ifstream input_file(this->storage_file);
+
+  while (!stoken.stop_requested()) {
+    std::vector<
+        std::pair<models::Task, std::promise<std::vector<models::Entry>>>>
+        items;
+    {
+      std::unique_lock<std::mutex> lock(this->file_search_mutex);
+      this->search_cond_var.wait(
+          lock, stoken, [&] { return !this->file_search_queue.empty(); });
+
+      if (this->file_search_queue.empty()) {
+        continue;
+      }
+
+      items = std::move(this->file_search_queue);
+      this->file_search_queue.clear();
+    }
+
+    for (auto &task : items) {
+      std::vector<models::Entry> entries =
+          this->search_in_file(task.first.comparison, input_file);
+
+      task.second.set_value(entries);
+    }
+  }
+}
+
 auto FileManagement::search_in_file(
     std::function<bool(const models::Entry &)> &comparison,
     std::ifstream &input_file) -> std::vector<models::Entry> {
@@ -39,33 +119,4 @@ auto FileManagement::search_in_file(
   lock.release();
 
   return entries;
-}
-
-void FileManagement::file_search(std::stop_token stoken) {
-  std::ifstream input_file(this->storage_file);
-
-  while (!stoken.stop_requested()) {
-    std::vector<
-        std::pair<models::Task, std::promise<std::vector<models::Entry>>>>
-        items;
-    {
-      std::unique_lock<std::mutex> lock(this->file_search_mutex);
-      this->search_cond_var.wait(
-          lock, stoken, [&] { return !this->file_search_queue.empty(); });
-
-      if (this->file_search_queue.empty()) {
-        continue;
-      }
-
-      items = std::move(this->file_search_queue);
-      this->file_search_queue.clear();
-    }
-
-    for (auto &task : items) {
-      std::vector<models::Entry> entries =
-          this->search_in_file(task.first.comparison, input_file);
-
-      task.second.set_value(entries);
-    }
-  }
 }

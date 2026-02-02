@@ -25,7 +25,20 @@ public:
 
   void insert_flush_queue(models::Entry entry);
 
-  auto has_in_file(models::Entry &entry) -> bool;
+  auto has_in_file(models::Entry &entry)
+      -> std::future<std::vector<models::Entry>>;
+
+  auto get_before(models::Timestamp &time)
+      -> std::future<std::vector<models::Entry>>;
+
+  auto get_after(models::Timestamp &time)
+      -> std::future<std::vector<models::Entry>>;
+
+  auto get_between(models::Timestamp &before_time,
+                   models::Timestamp &after_time)
+      -> std::future<std::vector<models::Entry>>;
+
+  // TODO: need to delete entry
 
 private:
   std::string storage_file;

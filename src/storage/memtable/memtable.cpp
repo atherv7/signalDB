@@ -1,10 +1,12 @@
 #include "memtable.h"
-#include "storage/models.h"
+
 #include <functional>
 #include <vector>
 
+#include "storage/models.h"
+
 MemTable::MemTable(int capacity, std::function<void(models::Entry)> flush_queue)
-    : capacity{capacity}, buffer(capacity), flush_queue{flush_queue} {}
+    : capacity{capacity}, buffer(capacity), flush_queue{std::move(flush_queue)} {}
 
 void MemTable::insert(models::Entry entry) {
   if (this->buffer[this->entry_to_write] != models::Entry{}) {
@@ -15,7 +17,7 @@ void MemTable::insert(models::Entry entry) {
   this->entry_to_write = (this->entry_to_write + 1) % this->capacity;
 }
 
-auto MemTable::delete_entry(models::Entry &entry) -> bool {
+auto MemTable::delete_entry(models::Entry& entry) -> bool {
   std::vector<models::Entry> new_buffer(this->capacity);
   bool delete_occurred = false;
   for (models::Entry curr_entry : this->buffer) {
@@ -30,8 +32,8 @@ auto MemTable::delete_entry(models::Entry &entry) -> bool {
   return delete_occurred;
 }
 
-auto MemTable::contains(models::Entry &entry) -> bool {
-  for (models::Entry &curr_entry : this->buffer) {
+auto MemTable::contains(models::Entry& entry) -> bool {
+  for (models::Entry& curr_entry : this->buffer) {
     if (curr_entry == entry) {
       return true;
     }
@@ -39,10 +41,9 @@ auto MemTable::contains(models::Entry &entry) -> bool {
   return false;
 }
 
-auto MemTable::get_before(models::Timestamp &time)
-    -> std::vector<models::Entry> {
+auto MemTable::get_before(models::Timestamp& time) -> std::vector<models::Entry> {
   std::vector<models::Entry> entries;
-  for (const auto &entry : this->buffer) {
+  for (const auto& entry : this->buffer) {
     if (entry.time < time) {
       entries.push_back(entry);
     }
@@ -50,10 +51,9 @@ auto MemTable::get_before(models::Timestamp &time)
   return entries;
 }
 
-auto MemTable::get_after(models::Timestamp &time)
-    -> std::vector<models::Entry> {
+auto MemTable::get_after(models::Timestamp& time) -> std::vector<models::Entry> {
   std::vector<models::Entry> entries;
-  for (const auto &entry : this->buffer) {
+  for (const auto& entry : this->buffer) {
     if (entry.time > time) {
       entries.push_back(entry);
     }
@@ -62,11 +62,10 @@ auto MemTable::get_after(models::Timestamp &time)
   return entries;
 }
 
-auto MemTable::get_between(models::Timestamp &before_time,
-                           models::Timestamp &after_time)
+auto MemTable::get_between(models::Timestamp& before_time, models::Timestamp& after_time)
     -> std::vector<models::Entry> {
   std::vector<models::Entry> entries;
-  for (const auto &entry : this->buffer) {
+  for (const auto& entry : this->buffer) {
     if (entry.time > before_time && entry.time < after_time) {
       entries.push_back(entry);
     }
@@ -74,7 +73,7 @@ auto MemTable::get_between(models::Timestamp &before_time,
   return entries;
 }
 
-auto MemTable::get_buffer() -> std::vector<models::Entry> & {
+auto MemTable::get_buffer() -> std::vector<models::Entry>& {
   return this->buffer;
 }
 

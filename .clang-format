@@ -1,0 +1,31 @@
+---
+# .clang-format
+Language: Cpp
+BasedOnStyle: Google
+
+# The setting you specifically asked for:
+PointerAlignment: Left
+
+# Matches your 'modernize' tidy checks
+Standard: Latest
+ColumnLimit: 100
+IndentWidth: 2
+ContinuationIndentWidth: 4
+
+# Ensures consistent spacing for references and pointers
+DerivePointerAlignment: false
+
+# Bracing style (Attach to end of line, standard for Google style)
+BreakBeforeBraces: Attach
+
+# Clean up include headers automatically
+IncludeBlocks: Regroup
+SortIncludes: true
+
+# Refines how function arguments are packed
+BinPackArguments: false
+BinPackParameters: false
+
+# Allows short functions on a single line if they fit
+AllowShortFunctionsOnASingleLine: Inline
+---

@@ -1,15 +1,17 @@
+#include <gtest/gtest.h>
+#include <unistd.h>
+
+#include <fstream>
+#include <vector>
+
 #include "helpers.h"
 #include "storage/models.h"
 #include "storage/storage.h"
-#include <fstream>
-#include <gtest/gtest.h>
-#include <unistd.h>
-#include <vector>
 
 TEST(StorageTest, InsertStorage) {
   std::string storage_file = "file_storage_1.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, 1, storage_file);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -30,14 +32,13 @@ TEST(StorageTest, InsertStorage) {
 TEST(StorageTest, HasEntry) {
   std::string storage_file = "file_storage_2.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, 1, storage_file);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 3,
   });
 
-  models::Entry entry =
-      models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 3};
+  models::Entry entry = models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 3};
 
   EXPECT_TRUE(store->has_entry(entry));
 }
@@ -45,7 +46,7 @@ TEST(StorageTest, HasEntry) {
 TEST(StorageTest, GetBefore) {
   std::string storage_file = "file_storage_3.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, 1, storage_file);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -59,8 +60,8 @@ TEST(StorageTest, GetBefore) {
 
   std::vector<models::Entry> before_entries = store->get_before(before_time);
 
-  models::Entry correct_entry{models::Entry{
-      .time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
+  models::Entry correct_entry{
+      models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
 
   EXPECT_EQ(before_entries.size(), 1);
   EXPECT_EQ(before_entries[0], correct_entry);
@@ -69,7 +70,7 @@ TEST(StorageTest, GetBefore) {
 TEST(StorageTest, GetAfter) {
   std::string storage_file = "file_storage_4.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, 1, storage_file);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -83,8 +84,8 @@ TEST(StorageTest, GetAfter) {
 
   std::vector<models::Entry> after_entries = store->get_after(after_time);
 
-  models::Entry correct_entry{models::Entry{
-      .time = models::Timestamp{.hour = 3, .min = 4}, .value = 5}};
+  models::Entry correct_entry{
+      models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5}};
 
   EXPECT_EQ(after_entries.size(), 1);
   EXPECT_EQ(after_entries[0], correct_entry);
@@ -93,17 +94,14 @@ TEST(StorageTest, GetAfter) {
 TEST(StorageTest, GetBetween) {
   std::string storage_file = "file_storage_5.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(2, 1, storage_file);
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
-                              .value = 2});
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
-                              .value = 5});
+  Storage* store = new Storage(2, 1, storage_file);
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
   models::Timestamp before_time = models::Timestamp{.hour = 0, .min = 0};
   models::Timestamp after_time = models::Timestamp{.hour = 5, .min = 0};
 
-  std::vector<models::Entry> between_entries =
-      store->get_between(before_time, after_time);
+  std::vector<models::Entry> between_entries = store->get_between(before_time, after_time);
 
   EXPECT_EQ(between_entries.size(), 2);
 }
@@ -131,11 +129,9 @@ TEST(StorageTest, GetBetween) {
 TEST(StorageTest, InsertStorageFile) {
   std::string storage_file = "file_storage_7.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(1, 1, storage_file);
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
-                              .value = 2});
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
-                              .value = 5});
+  Storage* store = new Storage(1, 1, storage_file);
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
   models::Entry entry_in_file =
       models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2};
@@ -152,8 +148,7 @@ TEST(StorageTest, InsertStorageFile) {
   models::Entry current_entry;
   std::vector<models::Entry> saved_entries{};
 
-  while (input_file.read(reinterpret_cast<char *>(&current_entry),
-                         size_of_entry)) {
+  while (input_file.read(reinterpret_cast<char*>(&current_entry), size_of_entry)) {
     saved_entries.push_back(current_entry);
   }
   input_file.close();
@@ -165,11 +160,9 @@ TEST(StorageTest, InsertStorageFile) {
 TEST(StorageTest, HasEntryInFile) {
   std::string storage_file = "file_storage_9.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(1, 1, storage_file);
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
-                              .value = 2});
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
-                              .value = 5});
+  Storage* store = new Storage(1, 1, storage_file);
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
   EXPECT_TRUE(file.wait_for_file());
 
@@ -182,11 +175,9 @@ TEST(StorageTest, HasEntryInFile) {
 TEST(StorageTest, GetBeforeInFile) {
   std::string storage_file = "file_storage_10.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(1, 1, storage_file);
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
-                              .value = 2});
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
-                              .value = 5});
+  Storage* store = new Storage(1, 1, storage_file);
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
   EXPECT_TRUE(file.wait_for_file());
 
@@ -203,11 +194,9 @@ TEST(StorageTest, GetBeforeInFile) {
 TEST(StorageTest, GetAfterInFile) {
   std::string storage_file = "file_storage_11.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(1, 1, storage_file);
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4},
-                              .value = 5});
-  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
-                              .value = 2});
+  Storage* store = new Storage(1, 1, storage_file);
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
+  store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
 
   EXPECT_TRUE(file.wait_for_file());
   models::Timestamp time = models::Timestamp{.hour = 1, .min = 0};
@@ -223,7 +212,7 @@ TEST(StorageTest, GetAfterInFile) {
 TEST(StorageTest, GetBetweenInFile) {
   std::string storage_file = "file_storage_12.txt";
   helpers::File file{storage_file};
-  Storage *store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, 1, storage_file);
 
   models::Entry first_entry =
       models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5};
@@ -237,8 +226,7 @@ TEST(StorageTest, GetBetweenInFile) {
   models::Timestamp before_time = models::Timestamp{.hour = 0, .min = 0};
   models::Timestamp after_time = models::Timestamp{.hour = 5, .min = 0};
 
-  std::vector<models::Entry> between_entries =
-      store->get_between(before_time, after_time);
+  std::vector<models::Entry> between_entries = store->get_between(before_time, after_time);
 
   EXPECT_EQ(between_entries.size(), 2);
   EXPECT_TRUE(between_entries[0] == first_entry);

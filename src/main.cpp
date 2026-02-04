@@ -1,3 +1,5 @@
 #include <iostream>
 
-int main() { std::cout << "signalDB\n"; }
+int main() {
+  std::cout << "signalDB\n";
+}

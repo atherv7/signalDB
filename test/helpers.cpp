@@ -1,12 +1,12 @@
 #include "helpers.h"
+
 #include <chrono>
 #include <filesystem>
 #include <thread>
 
 namespace helpers {
 auto File::wait_for_file(std::chrono::seconds timeout,
-                         std::chrono::milliseconds poll_interval) const
-    -> bool {
+                         std::chrono::milliseconds poll_interval) const -> bool {
   const auto deadline = std::chrono::steady_clock::now() + timeout;
 
   while (std::chrono::steady_clock::now() < deadline) {
@@ -18,4 +18,4 @@ auto File::wait_for_file(std::chrono::seconds timeout,
 
   return false;
 }
-} // namespace helpers
+}  // namespace helpers

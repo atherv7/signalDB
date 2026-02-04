@@ -1,46 +1,40 @@
 #pragma once
 
-#include "storage/models.h"
 #include <condition_variable>
-#include <fstream>
 #include <future>
-#include <iterator>
 #include <mutex>
-#include <queue>
 #include <stop_token>
 #include <thread>
 #include <utility>
 #include <vector>
+
+#include "storage/models.h"
 
 // TODO: when delete entry is implemented
 // and the file is deleted and then rewritten
 // may require the "renewing" of the ofstream and
 // ifstream references the threads have
 class FileManagement {
-public:
-  FileManagement(std::string &storage_file, int file_flush_cap);
+ public:
+  FileManagement(std::string& storage_file, int file_flush_cap);
   ~FileManagement();
 
-  auto has_file() const -> const bool;
+  auto has_file() const -> bool;
 
   void insert_flush_queue(models::Entry entry);
 
-  auto has_in_file(models::Entry &entry)
-      -> std::future<std::vector<models::Entry>>;
+  auto has_in_file(models::Entry& entry) -> std::future<std::vector<models::Entry>>;
 
-  auto get_before(models::Timestamp &time)
-      -> std::future<std::vector<models::Entry>>;
+  auto get_before(models::Timestamp& time) -> std::future<std::vector<models::Entry>>;
 
-  auto get_after(models::Timestamp &time)
-      -> std::future<std::vector<models::Entry>>;
+  auto get_after(models::Timestamp& time) -> std::future<std::vector<models::Entry>>;
 
-  auto get_between(models::Timestamp &before_time,
-                   models::Timestamp &after_time)
+  auto get_between(models::Timestamp& before_time, models::Timestamp& after_time)
       -> std::future<std::vector<models::Entry>>;
 
   // TODO: need to delete entry
 
-private:
+ private:
   std::string storage_file;
   bool contains_file{false};
   std::mutex file_mutex;
@@ -55,19 +49,17 @@ private:
   // file searching
   std::jthread file_search_worker_;
   std::mutex file_search_mutex;
-  std::vector<std::pair<models::Task, std::promise<std::vector<models::Entry>>>>
-      file_search_queue;
+  std::vector<std::pair<models::Task, std::promise<std::vector<models::Entry>>>> file_search_queue;
   std::condition_variable_any search_cond_var;
 
-  void flush_to_file(std::stop_token stoken);
+  void flush_to_file(std::stop_token& stoken);
 
-  void write_to_file(std::vector<models::Entry> &entries);
+  void write_to_file(std::vector<models::Entry>& entries);
 
-  void file_search(std::stop_token stoken);
+  void file_search(std::stop_token& stoken);
 
-  auto search_in_file(std::function<bool(const models::Entry &)> &comparison)
+  auto search_in_file(std::function<bool(const models::Entry&)>& comparison)
       -> std::vector<models::Entry>;
 
-  void queue_task(models::Task &task,
-                  std::promise<std::vector<models::Entry>> &result);
+  void queue_task(models::Task& task, std::promise<std::vector<models::Entry>>& result);
 };

@@ -1,5 +1,6 @@
 add_library(file_management
-  file_flushing.cpp
+  file_writing.cpp
+  file_reading.cpp
 )
 
 target_include_directories(file_management

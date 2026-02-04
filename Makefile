@@ -1,7 +1,7 @@
 BUILD_DIR := build
 SRC_FILES := $(shell find src -name '*.cpp')
 
-.PHONY: all configure build test clean rebuild lint
+.PHONY: all configure build test clean rebuild lint test-verbose
 
 all: build
 
@@ -14,6 +14,9 @@ build: configure
 
 test: build
 	cd $(BUILD_DIR) && ctest --output-on-failure
+
+test-verbose: build
+	cd $(BUILD_DIR) && ctest --verbose
 
 clean:
 	rm -rf $(BUILD_DIR)

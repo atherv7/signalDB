@@ -15,17 +15,17 @@ FileManagement::FileManagement(std::string &storage_file, int file_flush_cap)
       [this](std::stop_token stoken) { this->file_search(stoken); });
 }
 
-auto FileManagement::has_file() -> const bool { return this->contains_file; }
+auto FileManagement::has_file() const -> const bool {
+  return this->contains_file;
+}
 
 void FileManagement::insert_flush_queue(models::Entry entry) {
   std::lock_guard<std::mutex> lock(this->flush_queue_mutex);
   this->file_flush_queue.push_back(entry);
+  this->flush_cond_var.notify_one();
 }
 
 void FileManagement::flush_to_file(std::stop_token stoken) {
-  std::ofstream output_file(this->storage_file,
-                            std::ios::binary | std::ios::out | std::ios::trunc);
-
   while (!stoken.stop_requested()) {
     std::vector<models::Entry> batch;
     {
@@ -41,30 +41,27 @@ void FileManagement::flush_to_file(std::stop_token stoken) {
       batch = std::move(this->file_flush_queue);
       this->file_flush_queue.clear();
     }
-
-    this->write_to_file(batch, output_file);
+    this->write_to_file(batch);
     this->contains_file = true;
   }
 }
 
-// TODO: need to implement lock for the file
-void FileManagement::write_to_file(std::vector<models::Entry> &entries,
-                                   std::ofstream &output_file) {
-  // TODO: check proper modes with how the ofstream is initialized
-  output_file.open(this->storage_file, std::ios::app);
-  if (!output_file.is_open()) {
-    std::cerr << "Error: unable to open file for writing\n";
-    return;
-  }
-
+void FileManagement::write_to_file(std::vector<models::Entry> &entries) {
   int size_of_entry = sizeof(models::Entry);
 
-  std::unique_lock<std::mutex> lock{this->file_mutex};
-  for (const auto &entry : entries) {
-    output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
+  {
+    std::unique_lock<std::mutex> lock{this->file_mutex};
+    std::ofstream output_file(this->storage_file,
+                              std::ios::app | std::ios::binary);
+    if (!output_file.is_open()) {
+      std::cerr << "Error: unable to open file for writing\n";
+      return;
+    }
+    for (const auto &entry : entries) {
+      output_file.write(reinterpret_cast<const char *>(&entry), size_of_entry);
+    }
+    output_file.close();
   }
-  output_file.close();
-  lock.release();
 
   entries.clear();
 }

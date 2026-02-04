@@ -6,7 +6,7 @@
 
 class MemTable {
 public:
-  MemTable(int capacity, std::function<void(models::Entry)> &flush_queue);
+  MemTable(int capacity, std::function<void(models::Entry)> flush_queue);
 
   /*
    * insert entry to memtable

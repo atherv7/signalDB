@@ -3,8 +3,7 @@
 #include <functional>
 #include <vector>
 
-MemTable::MemTable(int capacity,
-                   std::function<void(models::Entry)> &flush_queue)
+MemTable::MemTable(int capacity, std::function<void(models::Entry)> flush_queue)
     : capacity{capacity}, buffer(capacity), flush_queue{flush_queue} {}
 
 void MemTable::insert(models::Entry entry) {
@@ -72,7 +71,6 @@ auto MemTable::get_between(models::Timestamp &before_time,
       entries.push_back(entry);
     }
   }
-
   return entries;
 }
 

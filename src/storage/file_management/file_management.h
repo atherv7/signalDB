@@ -21,7 +21,7 @@ public:
   FileManagement(std::string &storage_file, int file_flush_cap);
   ~FileManagement();
 
-  auto has_file() -> const bool;
+  auto has_file() const -> const bool;
 
   void insert_flush_queue(models::Entry entry);
 
@@ -61,11 +61,13 @@ private:
 
   void flush_to_file(std::stop_token stoken);
 
-  void write_to_file(std::vector<models::Entry> &entries,
-                     std::ofstream &output_file);
+  void write_to_file(std::vector<models::Entry> &entries);
 
   void file_search(std::stop_token stoken);
 
-  auto search_in_file(std::function<bool(const models::Entry &)> &comparison,
-                      std::ifstream &input_file) -> std::vector<models::Entry>;
+  auto search_in_file(std::function<bool(const models::Entry &)> &comparison)
+      -> std::vector<models::Entry>;
+
+  void queue_task(models::Task &task,
+                  std::promise<std::vector<models::Entry>> &result);
 };

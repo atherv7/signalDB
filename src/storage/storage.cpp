@@ -34,19 +34,27 @@ auto Storage::get_before(models::Timestamp &time)
     -> std::vector<models::Entry> {
   std::future<std::vector<models::Entry>> fut =
       this->file_management->get_before(time);
-  // TODO: implement get_before for mem_table
-  std::vector<models::Entry> entries = fut.get();
 
-  return entries;
+  std::vector<models::Entry> mem_entries = this->mem_store->get_before(time);
+
+  std::vector<models::Entry> file_entries = fut.get();
+
+  mem_entries.insert(mem_entries.begin(), file_entries.begin(),
+                     file_entries.end());
+
+  return mem_entries;
 }
 
 std::vector<models::Entry> Storage::get_after(models::Timestamp &time) {
   std::future<std::vector<models::Entry>> fut =
       this->file_management->get_after(time);
 
-  std::vector<models::Entry> entries = fut.get();
+  std::vector<models::Entry> mem_entries = this->mem_store->get_after(time);
+  std::vector<models::Entry> file_entries = fut.get();
 
-  return entries;
+  mem_entries.insert(mem_entries.begin(), file_entries.begin(),
+                     file_entries.end());
+  return mem_entries;
 }
 
 auto Storage::get_between(models::Timestamp &before_time,
@@ -55,9 +63,15 @@ auto Storage::get_between(models::Timestamp &before_time,
   std::future<std::vector<models::Entry>> fut =
       this->file_management->get_between(before_time, after_time);
 
-  std::vector<models::Entry> entries = fut.get();
+  std::vector<models::Entry> mem_entries =
+      this->mem_store->get_between(before_time, after_time);
 
-  return entries;
+  std::vector<models::Entry> file_entries = fut.get();
+
+  mem_entries.insert(mem_entries.begin(), file_entries.begin(),
+                     file_entries.end());
+
+  return mem_entries;
 }
 
 auto Storage::to_string() -> std::string {

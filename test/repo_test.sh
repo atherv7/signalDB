@@ -14,7 +14,7 @@ failed=0
 echo "Running tests $runs time(s)"
 
 for ((i = 1; i <= runs; i++)); do
-  echo -n "Run $i/$runs: "
+  echo -ne "Run $i/$runs:\t"
   if make test >/dev/null 2>&1; then
     echo -e "${GREEN}PASSED${RESET}"
   else

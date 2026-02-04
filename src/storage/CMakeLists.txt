@@ -1,4 +1,5 @@
 add_subdirectory(memtable)
+add_subdirectory(file_management)
 
 add_library(storage
   storage.cpp
@@ -11,6 +12,7 @@ target_include_directories(storage
 
 target_link_libraries(storage
   PRIVATE memtable
+          file_management
 )
 
 target_compile_features(storage

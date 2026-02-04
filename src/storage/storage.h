@@ -2,6 +2,7 @@
 
 #include "memtable/memtable.h"
 #include "models.h"
+#include "storage/file_management/file_management.h"
 #include <functional>
 #include <iostream>
 #include <ostream>
@@ -50,22 +51,12 @@ public:
 
 private:
   MemTable *mem_store;
+  FileManagement *file_management;
   std::string storage_file;
   bool created_file{false};
-
-  /*
-   * search in file for entry
-   */
-  std::vector<models::Entry>
-  search_in_file(std::function<bool(const models::Entry &)> &comparison);
 
   /*
    * delete entry from file, if present
    */
   bool delete_from_file(models::Entry &entry);
-
-  /*
-   * check if entry is present in file
-   */
-  bool check_from_file(models::Entry &entry);
 };

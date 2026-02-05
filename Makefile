@@ -1,7 +1,7 @@
 BUILD_DIR := build
 SRC_FILES := $(shell find src -name '*.cpp')
 
-.PHONY: all configure build test clean rebuild lint test-verbose
+.PHONY: all configure build test clean rebuild lint test-verbose format
 
 all: build
 
@@ -25,3 +25,9 @@ rebuild: clean all
 
 lint: configure
 	clang-tidy $(SRC_FILES) -p $(BUILD_DIR)
+
+format: configure
+	clang-format -i src/**/*.cpp
+
+format-check: configure
+	clang-format --dry-run -Werror src/**/*.cpp

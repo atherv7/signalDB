@@ -26,6 +26,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-
 
-      - name: Configure and Lint
+      - name: Configure, Lint, and Format
         run: |
           make lint
+          make format-check

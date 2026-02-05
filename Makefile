@@ -28,3 +28,6 @@ lint: configure
 
 format: configure
 	clang-format -i src/**/*.cpp
+
+format-check: configure
+	clang-format --dry-run -Werror src/**/*.cpp

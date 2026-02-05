@@ -9,7 +9,7 @@
 #include "models.h"
 #include "storage/file_management/file_management.h"
 
-Storage::Storage(int capacity, int file_queue_cap, std::string storage_file)
+Storage::Storage(int capacity, std::string storage_file, int file_queue_cap)
     : storage_file(storage_file) {
   this->file_management = new FileManagement(storage_file, file_queue_cap);
   this->mem_store = new MemTable(
@@ -54,8 +54,8 @@ std::vector<models::Entry> Storage::get_after(models::Timestamp& time) {
   return mem_entries;
 }
 
-auto Storage::get_between(models::Timestamp& before_time,
-                          models::Timestamp& after_time) -> std::vector<models::Entry> {
+auto Storage::get_between(models::Timestamp& before_time, models::Timestamp& after_time)
+    -> std::vector<models::Entry> {
   std::future<std::vector<models::Entry>> fut =
       this->file_management->get_between(before_time, after_time);
 

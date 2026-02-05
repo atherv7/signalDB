@@ -19,7 +19,7 @@ class FileManagement {
   FileManagement(std::string& storage_file, int file_flush_cap);
   ~FileManagement();
 
-  auto has_file() const -> bool;
+  [[nodiscard]] auto has_file() const -> bool;
 
   void insert_flush_queue(models::Entry entry);
 

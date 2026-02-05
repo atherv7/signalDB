@@ -11,7 +11,7 @@
 TEST(StorageTest, InsertStorage) {
   std::string storage_file = "file_storage_1.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, storage_file, 1);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -32,7 +32,7 @@ TEST(StorageTest, InsertStorage) {
 TEST(StorageTest, HasEntry) {
   std::string storage_file = "file_storage_2.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, storage_file, 1);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 3,
@@ -46,7 +46,7 @@ TEST(StorageTest, HasEntry) {
 TEST(StorageTest, GetBefore) {
   std::string storage_file = "file_storage_3.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, storage_file, 1);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -70,7 +70,7 @@ TEST(StorageTest, GetBefore) {
 TEST(StorageTest, GetAfter) {
   std::string storage_file = "file_storage_4.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, storage_file, 1);
   store->insert(models::Entry{
       .time = models::Timestamp{.hour = 0, .min = 1},
       .value = 2,
@@ -94,7 +94,7 @@ TEST(StorageTest, GetAfter) {
 TEST(StorageTest, GetBetween) {
   std::string storage_file = "file_storage_5.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(2, 1, storage_file);
+  Storage* store = new Storage(2, storage_file, 1);
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
@@ -108,7 +108,7 @@ TEST(StorageTest, GetBetween) {
 
 // TEST(StorageTest, DeleteEntry) {
 //   std::string storage_file = "file_storage_6.txt";
-//   Storage *store = new Storage(2, 1, storage_file);
+//   Storage *store = new Storage(2, storage_file, 1);
 //   store->insert(models::Entry{
 //       .time = models::Timestamp{.hour = 2, .min = 1},
 //       .value = 2,
@@ -129,7 +129,7 @@ TEST(StorageTest, GetBetween) {
 TEST(StorageTest, InsertStorageFile) {
   std::string storage_file = "file_storage_7.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, storage_file, 1);
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
@@ -160,7 +160,7 @@ TEST(StorageTest, InsertStorageFile) {
 TEST(StorageTest, HasEntryInFile) {
   std::string storage_file = "file_storage_9.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, storage_file, 1);
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
@@ -175,7 +175,7 @@ TEST(StorageTest, HasEntryInFile) {
 TEST(StorageTest, GetBeforeInFile) {
   std::string storage_file = "file_storage_10.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, storage_file, 1);
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
 
@@ -194,7 +194,7 @@ TEST(StorageTest, GetBeforeInFile) {
 TEST(StorageTest, GetAfterInFile) {
   std::string storage_file = "file_storage_11.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, storage_file, 1);
   store->insert(models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5});
   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2});
 
@@ -212,7 +212,7 @@ TEST(StorageTest, GetAfterInFile) {
 TEST(StorageTest, GetBetweenInFile) {
   std::string storage_file = "file_storage_12.txt";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, 1, storage_file);
+  Storage* store = new Storage(1, storage_file, 1);
 
   models::Entry first_entry =
       models::Entry{.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5};
@@ -235,7 +235,7 @@ TEST(StorageTest, GetBetweenInFile) {
 //
 // TEST(StorageTest, DeleteEntryInFile) {
 //   std::string storage_file = "file_storage_13.txt";
-//   Storage *store = new Storage(1, 1, storage_file);
+//   Storage *store = new Storage(1, storage_file, 1);
 //
 //   store->insert(models::Entry{.time = models::Timestamp{.hour = 0, .min = 1},
 //                               .value = 2});

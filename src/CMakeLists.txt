@@ -1,5 +1,4 @@
 add_subdirectory(storage)
-add_subdirectory(api)
 
 add_executable(signalDB
   main.cpp
@@ -7,5 +6,4 @@ add_executable(signalDB
 
 target_link_libraries(signalDB
   PRIVATE storage
-          api
 )

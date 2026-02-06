@@ -7,16 +7,17 @@ all: build
 
 configure:
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+	conan install . --output-folder=$(BUILD_DIR) --build=missing
+	cmake --preset conan-release
 
 build: configure
-	cmake --build $(BUILD_DIR)
+	cmake --build $(BUILD_DIR)/build/Release
 
 test: build
-	cd $(BUILD_DIR) && ctest --output-on-failure
+	cd $(BUILD_DIR)/build/Release && ctest --output-on-failure
 
 test-verbose: build
-	cd $(BUILD_DIR) && ctest --verbose
+	cd $(BUILD_DIR)/build/Release && ctest --verbose
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -24,7 +25,7 @@ clean:
 rebuild: clean all
 
 lint: configure
-	clang-tidy $(SRC_FILES) -p $(BUILD_DIR)
+	clang-tidy $(SRC_FILES) --extra-arg=-Isrc --extra-arg=-std=c++20 -p $(BUILD_DIR)/build/Release
 
 format: configure
 	clang-format -i src/**/*.cpp

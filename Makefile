@@ -25,7 +25,7 @@ clean:
 rebuild: clean all
 
 lint: configure
-	clang-tidy $(SRC_FILES) -p $(BUILD_DIR)
+	clang-tidy $(SRC_FILES) --extra-arg=-Isrc --extra-arg=-std=c++20 -p $(BUILD_DIR)/build/Release
 
 format: configure
 	clang-format -i src/**/*.cpp

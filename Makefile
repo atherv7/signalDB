@@ -7,7 +7,9 @@ all: build
 
 configure:
 	mkdir -p $(BUILD_DIR)
+	conan install . --output-folder=build --build=missing
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+	cd $(BUILD_DIR) && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 
 build: configure
 	cmake --build $(BUILD_DIR)

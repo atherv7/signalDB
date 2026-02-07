@@ -1,15 +1,9 @@
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <stop_token>
-#include <thread>
-#include <vector>
-
 #include "file_management.h"
 #include "storage/models.h"
 
 FileManagement::FileManagement(std::string& storage_file, int file_flush_cap)
-    : storage_file{storage_file}, flush_queue_cap{file_flush_cap} {
+    : flush_queue_cap{file_flush_cap} {
+  this->file_store = new FileStore(storage_file);
   this->file_flush_worker_ =
       std::jthread([this](std::stop_token stoken) { this->flush_to_file(stoken); });
   this->file_search_worker_ =
@@ -41,26 +35,7 @@ void FileManagement::flush_to_file(std::stop_token& stoken) {
       batch = std::move(this->file_flush_queue);
       this->file_flush_queue.clear();
     }
-    this->write_to_file(batch);
+    this->file_store->write_entries(batch);
     this->contains_file = true;
   }
-}
-
-void FileManagement::write_to_file(std::vector<models::Entry>& entries) {
-  int size_of_entry = sizeof(models::Entry);
-
-  {
-    std::unique_lock<std::mutex> lock{this->file_mutex};
-    std::ofstream output_file(this->storage_file, std::ios::app | std::ios::binary);
-    if (!output_file.is_open()) {
-      std::cerr << "Error: unable to open file for writing\n";
-      return;
-    }
-    for (const auto& entry : entries) {
-      output_file.write(reinterpret_cast<const char*>(&entry), size_of_entry);
-    }
-    output_file.close();
-  }
-
-  entries.clear();
 }

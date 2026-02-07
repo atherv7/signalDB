@@ -1,6 +1,7 @@
 add_library(file_management
   file_writing.cpp
   file_reading.cpp
+  file_store.cpp
 )
 
 target_include_directories(file_management

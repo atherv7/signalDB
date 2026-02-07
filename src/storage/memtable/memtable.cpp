@@ -1,10 +1,5 @@
 #include "memtable.h"
 
-#include <functional>
-#include <vector>
-
-#include "storage/models.h"
-
 MemTable::MemTable(int capacity, std::function<void(models::Entry)> flush_queue)
     : capacity{capacity}, buffer(capacity), flush_queue{std::move(flush_queue)} {}
 

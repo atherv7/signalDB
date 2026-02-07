@@ -6,10 +6,13 @@
 #include "memtable/memtable.h"
 #include "models.h"
 #include "storage/file_management/file_management.h"
+#include "storage/file_management/file_store.h"
 
 class Storage {
  public:
   Storage(int capacity, std::string storage_file, int file_queue_cap);
+
+  void write_ahead_insert(const std::vector<models::Entry>& entries);
 
   /*
    * insert entry into storage
@@ -52,6 +55,7 @@ class Storage {
  private:
   MemTable* mem_store;
   FileManagement* file_management;
+  FileStore* write_ahead;
   std::string storage_file;
   bool created_file{false};
 

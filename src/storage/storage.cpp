@@ -5,19 +5,20 @@
 #include <sstream>
 #include <vector>
 
-#include "memtable/memtable.h"
-#include "models.h"
-#include "storage/file_management/file_management.h"
-
 Storage::Storage(int capacity, std::string storage_file, int file_queue_cap)
     : storage_file(storage_file) {
   this->file_management = new FileManagement(storage_file, file_queue_cap);
+  this->write_ahead = new FileStore(storage_file + ".ahead");
   this->mem_store = new MemTable(
       capacity, [&](models::Entry entry) { this->file_management->insert_flush_queue(entry); });
 }
 
 void Storage::insert(models::Entry entry) {
   this->mem_store->insert(entry);
+}
+
+void Storage::write_ahead_insert(const std::vector<models::Entry>& entries) {
+  this->write_ahead->write_entries(entries);
 }
 
 auto Storage::has_entry(models::Entry& entry) -> bool {

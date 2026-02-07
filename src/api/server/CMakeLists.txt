@@ -5,6 +5,7 @@ add_library(server STATIC
 
 target_link_libraries(server PRIVATE
   Boost::system
+  nlohmann_json::nlohmann_json
 )
 
 target_include_directories(server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

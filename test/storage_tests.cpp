@@ -108,7 +108,7 @@ TEST(StorageTest, GetBetween) {
 
 // TEST(StorageTest, DeleteEntry) {
 //   std::string storage_file = "file_storage_6.txt";
-//   Storage *store = new Storage(2, storage_file, 1);
+//   Storage* store = new Storage(2, storage_file, 1);
 //   store->insert(models::Entry{
 //       .time = models::Timestamp{.hour = 2, .min = 1},
 //       .value = 2,
@@ -141,7 +141,7 @@ TEST(StorageTest, InsertStorageFile) {
   std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
   if (!input_file.is_open()) {
     std::cerr << "Error opening file for reading\n";
-    return;
+    FAIL();
   }
 
   int size_of_entry = sizeof(models::Entry);
@@ -232,7 +232,7 @@ TEST(StorageTest, GetBetweenInFile) {
   EXPECT_TRUE(between_entries[0] == first_entry);
   EXPECT_TRUE(between_entries[1] == second_entry);
 }
-//
+
 // TEST(StorageTest, DeleteEntryInFile) {
 //   std::string storage_file = "file_storage_13.txt";
 //   Storage *store = new Storage(1, storage_file, 1);
@@ -254,3 +254,32 @@ TEST(StorageTest, GetBetweenInFile) {
 //
 //   std::filesystem::remove(storage_file);
 // }
+//
+TEST(StorageTest, WriteAheadLog) {
+  std::string storage_file = "file_storage_14.txt.ahead";
+  helpers::File file{storage_file};
+  Storage* store = new Storage(1, "file_storage_14.txt", 1);
+  std::vector<models::Entry> entries = {
+      models::Entry{.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
+  store->write_ahead_insert(entries);
+
+  EXPECT_TRUE(file.wait_for_file());
+
+  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading\n";
+    FAIL();
+  }
+
+  int size_of_entry = sizeof(models::Entry);
+  models::Entry current_entry;
+  std::vector<models::Entry> saved_entries{};
+
+  while (input_file.read(reinterpret_cast<char*>(&current_entry), size_of_entry)) {
+    saved_entries.push_back(current_entry);
+  }
+  input_file.close();
+
+  EXPECT_TRUE(saved_entries.size() == 1);
+  EXPECT_TRUE(saved_entries[0] == entries[0]);
+}

@@ -1,12 +1,3 @@
-#include <fstream>
-#include <future>
-#include <ios>
-#include <iostream>
-#include <mutex>
-#include <stop_token>
-#include <utility>
-#include <vector>
-
 #include "file_management.h"
 #include "storage/models.h"
 
@@ -74,42 +65,11 @@ void FileManagement::file_search(std::stop_token& stoken) {
     }
 
     for (auto& task : items) {
-      std::vector<models::Entry> entries = this->search_in_file(task.first.comparison);
+      std::vector<models::Entry> entries = this->file_store->search_entries(task.first.comparison);
 
       task.second.set_value(entries);
     }
   }
-}
-
-auto FileManagement::search_in_file(std::function<bool(const models::Entry&)>& comparison)
-    -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries{};
-
-  if (!this->contains_file) {
-    return entries;
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries{};
-
-  {
-    std::unique_lock<std::mutex> lock{this->file_mutex};
-    std::ifstream input_file(this->storage_file, std::ios::binary | std::ios::in);
-    if (!input_file.is_open()) {
-      std::cerr << "Error opening file for reading\n";
-      return entries;
-    }
-
-    while (input_file.read(reinterpret_cast<char*>(&current_entry), size_of_entry)) {
-      if (comparison(current_entry)) {
-        entries.push_back(current_entry);
-      }
-    }
-    input_file.close();
-  }
-
-  return entries;
 }
 
 void FileManagement::queue_task(models::Task& task,

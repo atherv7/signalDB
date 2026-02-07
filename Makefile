@@ -9,6 +9,7 @@ configure:
 	mkdir -p $(BUILD_DIR)
 	conan install . --output-folder=$(BUILD_DIR) --build=missing
 	cmake --preset conan-release
+	ln -sf $(BUILD_DIR)/build/Release/compile_commands.json compile_commands.json
 
 build: configure
 	cmake --build $(BUILD_DIR)/build/Release
@@ -21,6 +22,7 @@ test-verbose: build
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm ./compile_commands.json
 
 rebuild: clean all
 
@@ -31,4 +33,4 @@ format: configure
 	clang-format -i src/**/*.cpp
 
 format-check: configure
-	clang-format --dry-run -Werror src/**/*.cpp
+	clang-format --dry-run -Werror src/**/*.cpp test/**/*.cpp

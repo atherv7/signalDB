@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "file_store.h"
 #include "storage/models.h"
 
 // TODO: when delete entry is implemented
@@ -35,9 +36,8 @@ class FileManagement {
   // TODO: need to delete entry
 
  private:
-  std::string storage_file;
+  FileStore* file_store;
   bool contains_file{false};
-  std::mutex file_mutex;
 
   // file flushing
   std::jthread file_flush_worker_;
@@ -54,12 +54,7 @@ class FileManagement {
 
   void flush_to_file(std::stop_token& stoken);
 
-  void write_to_file(std::vector<models::Entry>& entries);
-
   void file_search(std::stop_token& stoken);
-
-  auto search_in_file(std::function<bool(const models::Entry&)>& comparison)
-      -> std::vector<models::Entry>;
 
   void queue_task(models::Task& task, std::promise<std::vector<models::Entry>>& result);
 };

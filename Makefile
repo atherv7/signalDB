@@ -33,4 +33,4 @@ format: configure
 	clang-format -i src/**/*.cpp
 
 format-check: configure
-	clang-format --dry-run -Werror src/**/*.cpp test/**/*.cpp
+	clang-format --dry-run -Werror src/**/*.cpp

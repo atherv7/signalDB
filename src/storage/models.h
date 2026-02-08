@@ -41,7 +41,7 @@ struct Entry {
   bool operator!=(const Entry& other_entry) const { return !(*this == other_entry); }
 
   friend std::ostream& operator<<(std::ostream& os, const Entry& ent) {
-    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value << ")";
+    os << "Entry(time: " << ent.time << ", value: " << ent.value << ")";
     return os;
   }
 

@@ -20,6 +20,12 @@ test: build
 test-verbose: build
 	cd $(BUILD_DIR)/build/Release && ctest --verbose
 
+test-filter: build
+	cd $(BUILD_DIR)/build/Release && ctest -R '$(FILTER)'
+
+test-filter-verbose: build
+	cd $(BUILD_DIR)/build/Release && ctest -R '$(FILTER)' --verbose
+
 clean:
 	rm -rf $(BUILD_DIR)
 	rm ./compile_commands.json

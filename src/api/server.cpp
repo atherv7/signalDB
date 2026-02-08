@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include <boost/asio/error.hpp>
 #include <boost/beast/http/write.hpp>
 #include <thread>
 #include <utility>
@@ -16,6 +17,7 @@ Server::~Server() {
 void Server::shutdown() {
   this->running = false;
   acceptor.close();
+  ioc.stop();
 
   for (auto& t : threads) {
     if (t.joinable()) {
@@ -31,7 +33,11 @@ void Server::run() {
     this->acceptor.accept(socket, ec);
 
     if (not ec) {
+      std::cout << "accepted socket\n";
       this->threads.emplace_back(&Server::session, this, std::move(socket));
+    } else if (ec == boost::asio::error::operation_aborted ||
+               ec == boost::asio::error::bad_descriptor) {
+      break;
     } else {
       std::cerr << "Error: failed to accept socket connection, error code: " << ec << "\n";
     }

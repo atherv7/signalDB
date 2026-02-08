@@ -26,6 +26,8 @@ class Server {
 
   void run();
 
+  void shutdown();
+
  private:
   const net::ip::address address = net::ip::make_address("0.0.0.0");
   const unsigned short port = static_cast<unsigned short>(8000);
@@ -38,6 +40,4 @@ class Server {
   void handle_http(http::request<http::string_body>&& req, tcp::socket& socket);
 
   void session(tcp::socket socket);
-
-  void shutdown();
 };

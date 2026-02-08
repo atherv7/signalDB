@@ -22,8 +22,8 @@ void post_request(http::request<http::string_body>&& req,
 
     for (const auto& item : data) {
       models::Entry entry;
-      entry.time.hour = item.at("hour").get<int>();
-      entry.time.min = item.at("min").get<double>();
+      entry.time.hour = item.at("time").at("hour").get<int>();
+      entry.time.min = item.at("time").at("min").get<double>();
       entry.value = item.at("value").get<int>();
       entries.push_back(entry);
     }

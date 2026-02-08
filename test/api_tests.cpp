@@ -3,6 +3,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "api/server.h"
@@ -22,7 +23,6 @@ TEST(APITests, PostRequest) {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
 
   EXPECT_TRUE(helpers::post_request(entries));
-
   EXPECT_TRUE(file.wait_for_file());
 
   std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
@@ -42,4 +42,9 @@ TEST(APITests, PostRequest) {
 
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
+
+  server->shutdown();
+  if (server_thread.joinable()) {
+    server_thread.join();
+  }
 }

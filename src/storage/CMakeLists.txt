@@ -1,3 +1,5 @@
+find_package(nlohmann_json REQUIRED)
+
 add_subdirectory(memtable)
 add_subdirectory(file_management)
 
@@ -11,8 +13,10 @@ target_include_directories(storage
 )
 
 target_link_libraries(storage
-  PRIVATE memtable
-          file_management
+  PRIVATE 
+    memtable
+    file_management
+    nlohmann_json::nlohmann_json
 )
 
 target_compile_features(storage

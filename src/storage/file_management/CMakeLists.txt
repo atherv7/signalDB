@@ -1,7 +1,14 @@
+find_package(nlohmann_json REQUIRED)
+
 add_library(file_management
   file_writing.cpp
   file_reading.cpp
   file_store.cpp
+)
+
+target_link_libraries(file_management
+  PRIVATE
+    nlohmann_json::nlohmann_json
 )
 
 target_include_directories(file_management

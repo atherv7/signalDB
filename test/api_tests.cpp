@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <pthread.h>
 
 #include <fstream>
 #include <memory>
@@ -11,13 +12,33 @@
 #include "storage/models.h"
 #include "storage/storage.h"
 
+class ServerGuard {
+  Server& server;
+  std::thread& thread;
+
+ public:
+  ServerGuard(Server& s, std::thread& t) : server(s), thread(t) {}
+  ~ServerGuard() {
+    server.shutdown();
+    std::cout << "joining" << std::endl;
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+};
+
 TEST(APITests, PostRequest) {
   std::string storage_file = "api_storage.txt.ahead";
   helpers::File file{storage_file};
   std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage.txt", 1);
   Server server{store};
 
-  std::thread server_thread([&]() { server.run(); });
+  std::thread server_thread([&]() {
+    pthread_setname_np(pthread_self(), "server_thread");
+    server.run();
+  });
+
+  ServerGuard sg{server, server_thread};
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
@@ -42,9 +63,4 @@ TEST(APITests, PostRequest) {
 
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
-
-  server.shutdown();
-  if (server_thread.joinable()) {
-    server_thread.join();
-  }
 }

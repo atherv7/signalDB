@@ -27,6 +27,7 @@ struct File {
 
   ~File() {
     if (std::filesystem::exists(path)) {
+      std::cout << "removing file" << std::endl;
       std::filesystem::remove(path);
     }
   }

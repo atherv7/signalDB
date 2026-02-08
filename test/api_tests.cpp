@@ -14,10 +14,10 @@
 TEST(APITests, PostRequest) {
   std::string storage_file = "api_storage.txt.ahead";
   helpers::File file{storage_file};
-  Storage* store = new Storage(1, "api_storage.txt", 1);
-  Server* server = new Server(std::make_shared<Storage>(*store));
+  std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage.txt", 1);
+  Server server{store};
 
-  std::thread server_thread([&server]() { server->run(); });
+  std::thread server_thread([&]() { server.run(); });
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
@@ -43,7 +43,7 @@ TEST(APITests, PostRequest) {
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
 
-  server->shutdown();
+  server.shutdown();
   if (server_thread.joinable()) {
     server_thread.join();
   }

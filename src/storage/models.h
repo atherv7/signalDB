@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 namespace models {
 struct Timestamp {
@@ -27,6 +28,8 @@ struct Timestamp {
   }
 };
 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Timestamp, hour, min);
+
 struct Entry {
   Timestamp time;
   int value = -1;
@@ -38,7 +41,7 @@ struct Entry {
   bool operator!=(const Entry& other_entry) const { return !(*this == other_entry); }
 
   friend std::ostream& operator<<(std::ostream& os, const Entry& ent) {
-    os << "Entry(timestamp: " << ent.time << ", value: " << ent.value << ")";
+    os << "Entry(time: " << ent.time << ", value: " << ent.value << ")";
     return os;
   }
 
@@ -49,6 +52,8 @@ struct Entry {
     };
   }
 };
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Entry, time, value);
 
 struct Task {
   std::function<bool(const models::Entry&)> comparison;

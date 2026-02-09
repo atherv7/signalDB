@@ -22,8 +22,8 @@ TEST(StorageTest, InsertStorage) {
   });
 
   std::string correct_output =
-      "Entry(timestamp: Timestamp(hour: 0, minute: 1), "
-      "value: 2)\nEntry(timestamp: Timestamp(hour: 3, "
+      "Entry(time: Timestamp(hour: 0, minute: 1), "
+      "value: 2)\nEntry(time: Timestamp(hour: 3, "
       "minute: 4), value: 5)\n";
 
   EXPECT_EQ(correct_output, store->to_string());

@@ -15,44 +15,29 @@ Server::~Server() {
 }
 
 void Server::shutdown() {
-  std::cout << "going to shutdown server..." << std::endl;
-  this->running = false;
   beast::error_code ec;
   this->acceptor.close(ec);
-  if (ec) {
-    std::cerr << "Error closing accepetor: " << ec.message() << std::endl;
-  } else {
-    std::cout << "No error closing acceptor" << std::endl;
-  }
+  this->running = false;
   this->ioc.stop();
 
-  for (auto& t : threads) {
+  for (auto& t : this->threads) {
     if (t.joinable()) {
-      std::cout << "joining thread" << std::endl;
       t.join();
     }
   }
-
-  std::cout << "completed shutdown function" << std::endl;
 }
 
 void Server::run() {
-  while (this->running) {
-    try {
-      beast::error_code ec;
-      tcp::socket socket{this->ioc};
-      this->acceptor.accept(socket, ec);
+  this->do_accept();
+  this->ioc.run();
+}
 
-      if (not ec) {
-        std::cout << "inserting thread" << std::endl;
-        this->threads.emplace_back(&Server::session, this, std::move(socket));
-      } else {
-        std::cerr << "Error: failed to accept socket connection, error code: " << ec << "\n";
-      }
-    } catch (const std::exception& e) {
-      std::cerr << "Server exception: " << e.what() << "\n";
+void Server::do_accept() {
+  this->acceptor.async_accept([this](beast::error_code ec, tcp::socket socket) {
+    if (not ec) {
+      threads.emplace_back(&Server::session, this, std::move(socket));
     }
-  }
+  });
 }
 
 void Server::session(tcp::socket socket) {

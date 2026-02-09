@@ -1,4 +1,4 @@
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(file_management
   file_writing.cpp
@@ -6,10 +6,10 @@ add_library(file_management
   file_store.cpp
 )
 
-target_link_libraries(file_management
-  PRIVATE
-    nlohmann_json::nlohmann_json
-)
+# target_link_libraries(file_management
+#   PUBLIC
+#     nlohmann_json::nlohmann_json
+# )
 
 target_include_directories(file_management
   PUBLIC

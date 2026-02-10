@@ -1,7 +1,10 @@
 #include "server.h"
 
 #include <boost/beast/core/error.hpp>
+#include <boost/beast/core/role.hpp>
+#include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/write.hpp>
+#include <boost/beast/websocket/stream_base.hpp>
 #include <thread>
 #include <utility>
 
@@ -51,6 +54,7 @@ void Server::session(tcp::socket socket) {
   }
 
   if (websocket::is_upgrade(req)) {
+    this->websocket_conn(std::move(socket), std::move(req));
   } else {
     this->handle_http(std::move(req), socket);
   }
@@ -67,4 +71,35 @@ void Server::handle_http(http::request<http::string_body>&& req, tcp::socket& so
   res.body() = "{\"error\":\"Route not found\"}";
   res.prepare_payload();
   http::write(socket, res);
+}
+
+void Server::websocket_conn(tcp::socket socket, http::request<http::string_body> req) {
+  try {
+    websocket::stream<tcp::socket> ws{std::move(socket)};
+    ws.set_option(websocket::stream_base::timeout::suggested(beast::role_type::server));
+    ws.accept(req);
+
+    for (;;) {
+      beast::flat_buffer buffer;
+      beast::error_code ec;
+      ws.read(buffer, ec);
+
+      if (ec == websocket::error::closed) {
+        break;
+      } else if (ec) {
+        std::cerr << "Read error: " << ec.message() << "\n";
+        break;
+      }
+
+      ws.text(ws.got_text());
+      ws.write(buffer.data(), ec);
+
+      if (ec) {
+        std::cerr << "Write error: " << ec.message() << "\n";
+        break;
+      }
+    }
+  } catch (beast::system_error const& e) {
+    std::cerr << "Unexpected exception: " << e.what() << "\n";
+  }
 }

@@ -42,5 +42,5 @@ class Server {
   void session(tcp::socket socket);
   void do_accept();
 
-  void websocket_conn(tcp::socket socket, http::request<http::string_body> req);
+  void websocket_conn(const http::request<http::string_body>& req, tcp::socket socket);
 };

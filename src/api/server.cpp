@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/core/role.hpp>
 #include <boost/beast/http/string_body.hpp>
@@ -8,7 +9,9 @@
 #include <thread>
 #include <utility>
 
+#include "helpers.h"
 #include "routes.h"
+#include "storage/models.h"
 
 Server::Server(std::shared_ptr<Storage> storage)
     : storage(std::move(storage)), acceptor(ioc, {this->address, this->port}) {}
@@ -54,7 +57,7 @@ void Server::session(tcp::socket socket) {
   }
 
   if (websocket::is_upgrade(req)) {
-    this->websocket_conn(std::move(socket), std::move(req));
+    this->websocket_conn(req, std::move(socket));
   } else {
     this->handle_http(std::move(req), socket);
   }
@@ -73,7 +76,7 @@ void Server::handle_http(http::request<http::string_body>&& req, tcp::socket& so
   http::write(socket, res);
 }
 
-void Server::websocket_conn(tcp::socket socket, http::request<http::string_body> req) {
+void Server::websocket_conn(const http::request<http::string_body>& req, tcp::socket socket) {
   try {
     websocket::stream<tcp::socket> ws{std::move(socket)};
     ws.set_option(websocket::stream_base::timeout::suggested(beast::role_type::server));
@@ -91,8 +94,13 @@ void Server::websocket_conn(tcp::socket socket, http::request<http::string_body>
         break;
       }
 
-      ws.text(ws.got_text());
-      ws.write(buffer.data(), ec);
+      std::string json_string = beast::buffers_to_string(buffer.data());
+
+      std::vector<models::Entry> entries = helpers::parse_json_for_entries(json_string);
+
+      storage->write_ahead_insert(entries);
+
+      // TODO: need to write success message
 
       if (ec) {
         std::cerr << "Write error: " << ec.message() << "\n";

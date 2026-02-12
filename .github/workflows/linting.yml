@@ -36,6 +36,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-
 
+      - name: Check clang-format version
+        run: clang-format --version
+
       - name: Configure, Lint, and Format
         run: |
           make lint

@@ -4,7 +4,6 @@
 #include <boost/beast/http/string_body.hpp>
 #include <exception>
 #include <nlohmann/json.hpp>
-#include <stdexcept>
 #include <vector>
 
 #include "api/helpers/helpers.h"

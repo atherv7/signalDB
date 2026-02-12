@@ -22,7 +22,10 @@ Server::~Server() {
 
 void Server::shutdown() {
   beast::error_code ec;
-  this->acceptor.close(ec);
+  auto ec_result = this->acceptor.close(ec);
+  if (ec_result) {
+    std::cerr << "Acceptor failed to close: " << ec.message() << "\n";
+  }
   this->running = false;
   this->ioc.stop();
 
@@ -100,7 +103,9 @@ void Server::websocket_conn(const http::request<http::string_body>& req, tcp::so
 
       storage->write_ahead_insert(entries);
 
-      // TODO: need to write success message
+      const std::string success_msg{"{\"status\": \"success\", \"message\": \"Data stored\"}"};
+      ws.text(true);
+      ws.write(net::buffer(success_msg), ec);
 
       if (ec) {
         std::cerr << "Write error: " << ec.message() << "\n";

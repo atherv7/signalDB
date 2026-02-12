@@ -61,9 +61,9 @@ TEST(APITests, PostWS) {
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
-      {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
-      {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
-      {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
+      {.time = models::Timestamp{.hour = 1, .min = 2}, .value = 3},
+      {.time = models::Timestamp{.hour = 2, .min = 3}, .value = 4},
+      {.time = models::Timestamp{.hour = 3, .min = 4}, .value = 5},
   };
 
   EXPECT_TRUE(helpers::post_ws(entries));
@@ -88,5 +88,11 @@ TEST(APITests, PostWS) {
 
   for (int i = 0; i < saved_entries.size(); i++) {
     EXPECT_EQ(saved_entries[i], entries[i]);
+  }
+
+  file.~File();
+  server.shutdown();
+  if (server_thread.joinable()) {
+    server_thread.join();
   }
 }

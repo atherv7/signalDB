@@ -23,7 +23,7 @@ std::vector<models::Entry> parse_json_for_entries(std::string& json_string) {
       entries.push_back(entry);
     }
   } catch (const std::exception& e) {
-    std::cerr << "Failed to parse json string\n";
+    std::cerr << "error for parsing json: " << e.what() << "\n";
   }
 
   return entries;

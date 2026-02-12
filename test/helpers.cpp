@@ -1,5 +1,6 @@
 #include "helpers.h"
 
+#include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
@@ -74,8 +75,10 @@ auto post_ws(const std::vector<models::Entry>& entries) -> bool {
     ws.handshake("localhost", "/");
 
     for (const auto& entry : entries) {
-      nlohmann::json data = entry;
-      ws.write(data);
+      std::vector<models::Entry> entry_arr{entry};
+      nlohmann::json data = entry_arr;
+      std::string data_json_str = data.dump();
+      ws.write(net::buffer(data_json_str));
 
       beast::flat_buffer buffer;
       ws.read(buffer);

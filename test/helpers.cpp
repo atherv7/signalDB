@@ -1,10 +1,14 @@
 #include "helpers.h"
 
+#include <boost/asio/buffer.hpp>
+#include <boost/asio/connect.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/beast/websocket.hpp>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -57,5 +61,37 @@ auto post_request(const std::vector<models::Entry>& entries) -> bool {
     std::cerr << "Request failed: " << e.what() << "\n";
     return false;
   }
+}
+
+auto post_ws(const std::vector<models::Entry>& entries) -> bool {
+  try {
+    net::io_context ioc;
+    tcp::resolver resolver{ioc};
+    websocket::stream<tcp::socket> ws{ioc};
+
+    auto const results = resolver.resolve("127.0.0.1", "8000");
+
+    net::connect(ws.next_layer(), results.begin(), results.end());
+    ws.handshake("localhost", "/");
+
+    for (const auto& entry : entries) {
+      std::vector<models::Entry> entry_arr{entry};
+      nlohmann::json data = entry_arr;
+      std::string data_json_str = data.dump();
+      ws.write(net::buffer(data_json_str));
+
+      beast::flat_buffer buffer;
+      ws.read(buffer);
+
+      std::cout << beast::buffers_to_string(buffer.data()) << "\n";
+    }
+    ws.close(websocket::close_code::normal);
+
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Client error: " << e.what() << "\n";
+  }
+
+  return false;
 }
 }  // namespace helpers

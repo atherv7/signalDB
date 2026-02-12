@@ -4,8 +4,9 @@
 #include <boost/beast/http/string_body.hpp>
 #include <exception>
 #include <nlohmann/json.hpp>
-#include <stdexcept>
 #include <vector>
+
+#include "api/helpers/helpers.h"
 
 using json = nlohmann::json;
 
@@ -14,19 +15,7 @@ void post_request(http::request<http::string_body>&& req,
                   tcp::socket& socket,
                   const std::shared_ptr<Storage>& storage) {
   try {
-    auto data = json::parse(req.body());
-    if (not data.is_array()) {
-      throw std::runtime_error("Expected a JSON array");
-    }
-    std::vector<models::Entry> entries;
-
-    for (const auto& item : data) {
-      models::Entry entry;
-      entry.time.hour = item.at("time").at("hour").get<int>();
-      entry.time.min = item.at("time").at("min").get<double>();
-      entry.value = item.at("value").get<int>();
-      entries.push_back(entry);
-    }
+    std::vector<models::Entry> entries = helpers::parse_json_for_entries(req.body());
 
     storage->write_ahead_insert(entries);
 

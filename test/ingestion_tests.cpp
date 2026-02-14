@@ -5,10 +5,9 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 
-#include "api/server.h"
 #include "helpers.h"
+#include "ingestion/server.h"
 #include "storage/models.h"
 #include "storage/storage.h"
 

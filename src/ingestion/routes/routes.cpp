@@ -6,7 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
-#include "api/helpers/helpers.h"
+#include "ingestion/helpers/helpers.h"
 
 using json = nlohmann::json;
 

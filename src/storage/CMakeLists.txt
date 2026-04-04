@@ -14,7 +14,7 @@ target_include_directories(storage
 target_link_libraries(storage
   PRIVATE
     memtable
-    file_management
+    file_store
     nlohmann_json::nlohmann_json
 )
 

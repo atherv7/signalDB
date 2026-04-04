@@ -4,6 +4,7 @@
 
 #include "models.h"
 #include "storage/file_management/file_store.h"
+#include "storage/memtable/memtable.h"
 
 class Storage {
  public:
@@ -21,4 +22,5 @@ class Storage {
 
  private:
   FileStore* write_ahead;
+  MemTable* memtable;
 };

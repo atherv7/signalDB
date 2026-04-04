@@ -9,6 +9,7 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/websocket.hpp>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "storage/storage.h"

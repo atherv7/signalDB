@@ -14,7 +14,7 @@ class MemTable {
   /*
    * insert entries to queue for memtable
    */
-  void insert_queue(const std::vector<models::Entry>& entries);
+  void insert(const std::vector<models::Entry>& entries);
 
  private:
   struct MemTableNode {
@@ -25,9 +25,10 @@ class MemTable {
   };
 
   std::vector<models::Entry>* queue;
-  std::mutex lock;
+  std::mutex queue_lock;
+  std::mutex memtable_lock;
   int memtable_capacity;
-  int memtable_size;
+  unsigned long memtable_size;  // TODO: change to size in terms of bytes
   int max_level;
   float probability;
   int current_level;
@@ -38,6 +39,9 @@ class MemTable {
    */
   void from_queue_to_memtable();
 
+  /*
+   * insert entry into memtable
+   */
   void insert_memtable(models::Entry entry);
 
   /*
@@ -45,5 +49,8 @@ class MemTable {
    */
   void flush_memtable();
 
+  /*
+   * get random level for skip list node
+   */
   [[nodiscard]] auto random_level() const -> int;
 };

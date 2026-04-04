@@ -16,22 +16,27 @@ MemTable::MemTable(int memtable_capacity, int max_level, float probability)
   this->memtable_head = nullptr;
 }
 
-void MemTable::insert_queue(const std::vector<models::Entry>& entries) {
-  std::lock_guard<std::mutex> lock(this->lock);
+void MemTable::insert(const std::vector<models::Entry>& entries) {
+  std::lock_guard<std::mutex> lock(this->queue_lock);
   this->queue->insert(this->queue->end(), entries.begin(), entries.end());
 }
 
 void MemTable::from_queue_to_memtable() {
   std::vector<models::Entry>* to_memtable = nullptr;
   {
-    std::lock_guard<std::mutex> lock(this->lock);
+    std::lock_guard<std::mutex> lock(this->queue_lock);
     to_memtable = this->queue;
     this->queue = new std::vector<models::Entry>();
   }
 
-  for (models::Entry& entry : *to_memtable) {
-    this->insert_memtable(entry);
+  {
+    std::lock_guard<std::mutex> lock(this->memtable_lock);
+    for (models::Entry& entry : *to_memtable) {
+      this->insert_memtable(entry);
+    }
   }
+
+  this->memtable_size += to_memtable->size();
 }
 
 void MemTable::insert_memtable(models::Entry entry) {
@@ -66,7 +71,19 @@ void MemTable::insert_memtable(models::Entry entry) {
   }
 }
 
-void MemTable::flush_memtable() {}
+void MemTable::flush_memtable() {
+  MemTableNode* to_be_flushed = nullptr;
+
+  // TODO: mutex may not be necessary if this
+  // is triggered after an insertion
+  {
+    std::lock_guard<std::mutex> lock(this->memtable_lock);
+    to_be_flushed = this->memtable_head;
+    this->memtable_head = nullptr;
+  }
+
+  // TODO: perform flushing
+}
 
 auto MemTable::random_level() const -> int {
   int level = 0;

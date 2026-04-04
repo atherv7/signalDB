@@ -1,7 +1,6 @@
 find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(memtable)
-add_subdirectory(file_management)
 
 add_library(storage
   storage.cpp

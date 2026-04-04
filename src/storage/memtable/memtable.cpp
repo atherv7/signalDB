@@ -82,7 +82,7 @@ void MemTable::flush_memtable() {
     this->memtable_head = nullptr;
   }
 
-  // TODO: perform flushing
+  // TODO: perform compression and flushing
 }
 
 auto MemTable::random_level() const -> int {

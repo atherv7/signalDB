@@ -1,57 +1,49 @@
 #pragma once
 
-#include <functional>
+#include <mutex>
 #include <vector>
 
 #include "storage/models.h"
 
 class MemTable {
  public:
-  MemTable(int capacity, std::function<void(models::Entry)> flush_queue);
+  MemTable(int memtable_capacity, int max_level = 16, float probability = 0.5f);
+
+  ~MemTable();
 
   /*
-   * insert entry to memtable
+   * insert entries to queue for memtable
    */
-  void insert(models::Entry entry);
-
-  /*
-   * delete entry from memtable
-   */
-  auto delete_entry(models::Entry& entry) -> bool;
-
-  /*
-   * check if buffer contains entry
-   */
-  auto contains(models::Entry& entry) -> bool;
-
-  auto get_before(models::Timestamp& time) -> std::vector<models::Entry>;
-
-  auto get_after(models::Timestamp& time) -> std::vector<models::Entry>;
-
-  auto get_between(models::Timestamp& before_time, models::Timestamp& after_time)
-      -> std::vector<models::Entry>;
-
-  /*
-   * get reference of buffer
-   */
-  auto get_buffer() -> std::vector<models::Entry>&;
-
-  /*
-   *  clear the buffer
-   */
-  void clear();
-
-  friend std::ostream& operator<<(std::ostream& os, const MemTable& mem_table) {
-    for (const auto& entry : mem_table.buffer) {
-      os << entry << "\n";
-    }
-
-    return os;
-  }
+  void insert_queue(const std::vector<models::Entry>& entries);
 
  private:
-  std::vector<models::Entry> buffer;
-  std::function<void(models::Entry)> flush_queue;
-  int entry_to_write{0};
-  int capacity;
+  struct MemTableNode {
+    models::Entry entry;
+    std::vector<MemTableNode*> next;
+
+    MemTableNode(models::Entry entry, int level) : entry(entry), next(level + 1, nullptr) {}
+  };
+
+  std::vector<models::Entry>* queue;
+  std::mutex lock;
+  int memtable_capacity;
+  int memtable_size;
+  int max_level;
+  float probability;
+  int current_level;
+  MemTableNode* memtable_head;
+
+  /*
+   * remove entries from queue to memtable
+   */
+  void from_queue_to_memtable();
+
+  void insert_memtable(models::Entry entry);
+
+  /*
+   * flush memtable to file
+   */
+  void flush_memtable();
+
+  [[nodiscard]] auto random_level() const -> int;
 };

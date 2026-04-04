@@ -13,7 +13,7 @@ target_include_directories(storage
 )
 
 target_link_libraries(storage
-  PRIVATE 
+  PRIVATE
     memtable
     file_management
     nlohmann_json::nlohmann_json

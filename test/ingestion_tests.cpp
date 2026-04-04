@@ -14,7 +14,7 @@
 TEST(APITests, PostRequest) {
   std::string storage_file = "api_storage.txt.ahead";
   helpers::File file{storage_file};
-  std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage.txt", 1);
+  std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage.txt");
   Server server{store};
 
   std::thread server_thread([&]() { server.run(); });
@@ -53,7 +53,7 @@ TEST(APITests, PostRequest) {
 TEST(APITests, PostWS) {
   std::string storage_file = "api_storage_2.txt.ahead";
   helpers::File file{storage_file};
-  std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage_2.txt", 1);
+  std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage_2.txt");
   Server server{store};
 
   std::thread server_thread([&]() { server.run(); });

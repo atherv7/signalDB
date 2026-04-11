@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -21,6 +22,18 @@ struct Timestamp {
   }
 
   bool operator>(const Timestamp& other_time) const { return other_time < *this; }
+
+  Timestamp operator-(const Timestamp& other_time) const {
+    double this_minutes = (this->hour * 60) + this->min;
+    double other_minutes = (other_time.hour * 60) + other_time.min;
+
+    double difference = this_minutes - other_minutes;
+
+    int hours = int(difference / 60);
+    double mins = std::fmod(difference, 60.0);
+
+    return {hours, mins};
+  }
 
   friend std::ostream& operator<<(std::ostream& os, const Timestamp& time) {
     os << "Timestamp(hour: " << time.hour << ", minute: " << time.min << ")";

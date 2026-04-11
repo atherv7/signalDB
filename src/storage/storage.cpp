@@ -1,9 +1,5 @@
 #include "storage.h"
 
-#include <vector>
-
-#include "storage/memtable/memtable.h"
-
 // TODO: smart pointers?
 // TODO: adjust memtable capacity
 Storage::Storage(const std::string& storage_file) {
@@ -12,7 +8,7 @@ Storage::Storage(const std::string& storage_file) {
 }
 
 void Storage::write_ahead_insert(const std::vector<models::Entry>& entries) {
-  this->write_ahead->write_entries(entries);
+  this->write_ahead->write_sync(entries);
 }
 
 void Storage::memtable_queue_insert(const std::vector<models::Entry>& entries) {

@@ -3,8 +3,6 @@
 #include <exception>
 #include <vector>
 
-#include "storage/models.h"
-
 namespace helpers {
 std::vector<models::Entry> parse_json_for_entries(std::string& json_string) {
   std::vector<models::Entry> entries;

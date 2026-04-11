@@ -6,7 +6,6 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/write.hpp>
 #include <boost/beast/websocket/stream_base.hpp>
-#include <thread>
 #include <utility>
 
 #include "helpers.h"

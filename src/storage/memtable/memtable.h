@@ -1,57 +1,87 @@
 #pragma once
 
-#include <functional>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <stop_token>
+#include <thread>
 #include <vector>
 
+#include "file_management/file_manager.h"
 #include "storage/models.h"
 
 class MemTable {
  public:
-  MemTable(int capacity, std::function<void(models::Entry)> flush_queue);
+  struct Configuration {
+    unsigned long capacity = 1024 * 1024ul;
+    int max_level = 16;
+    float probability = 0.5f;
+  };
+
+  MemTable(FileManager& file_manager, Configuration config);
+
+  ~MemTable();
+
+  // prevent system crash from mutex, thread, and atomic copying
+  MemTable(const MemTable&) = delete;
+  MemTable& operator=(const MemTable&) = delete;
 
   /*
-   * insert entry to memtable
+   * insert entries to queue for memtable
    */
-  void insert(models::Entry entry);
+  void insert(const std::vector<models::Entry>& entries);
 
   /*
-   * delete entry from memtable
+   * start memtable instance threads
    */
-  auto delete_entry(models::Entry& entry) -> bool;
+  void start();
 
   /*
-   * check if buffer contains entry
+   * stop memtable instance threads
    */
-  auto contains(models::Entry& entry) -> bool;
-
-  auto get_before(models::Timestamp& time) -> std::vector<models::Entry>;
-
-  auto get_after(models::Timestamp& time) -> std::vector<models::Entry>;
-
-  auto get_between(models::Timestamp& before_time, models::Timestamp& after_time)
-      -> std::vector<models::Entry>;
-
-  /*
-   * get reference of buffer
-   */
-  auto get_buffer() -> std::vector<models::Entry>&;
-
-  /*
-   *  clear the buffer
-   */
-  void clear();
-
-  friend std::ostream& operator<<(std::ostream& os, const MemTable& mem_table) {
-    for (const auto& entry : mem_table.buffer) {
-      os << entry << "\n";
-    }
-
-    return os;
-  }
+  void stop();
 
  private:
-  std::vector<models::Entry> buffer;
-  std::function<void(models::Entry)> flush_queue;
-  int entry_to_write{0};
-  int capacity;
+  struct MemTableNode {
+    models::Entry entry;
+    std::unique_ptr<MemTableNode> next_owned;
+    std::vector<MemTableNode*> levels;
+
+    MemTableNode(models::Entry e, int level) : entry(e), levels(level + 1, nullptr) {}
+  };
+
+  FileManager& file_manager;
+
+  std::vector<models::Entry> queue;
+  std::mutex queue_lock;
+  std::mutex memtable_lock;
+  unsigned long memtable_capacity;
+  unsigned long memtable_size;
+  int max_level;
+  float probability;
+  int current_level;
+  std::unique_ptr<MemTableNode> memtable_head;
+  std::jthread queue_to_memtable_thread;
+  std::condition_variable queue_to_memtable_cv;
+  std::jthread memtable_to_file_thread;
+
+  /*
+   * remove entries from queue to memtable
+   */
+  void from_queue_to_memtable(std::stop_token stoken);
+
+  /*
+   * insert entry into memtable
+   */
+  void insert_memtable(models::Entry entry);
+
+  /*
+   * flush memtable to file
+   */
+  void flush_memtable();
+
+  /*
+   * get random level for skip list node
+   */
+  [[nodiscard]] auto random_level() const -> int;
 };

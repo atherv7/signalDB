@@ -1,78 +1,152 @@
 #include "memtable.h"
 
-MemTable::MemTable(int capacity, std::function<void(models::Entry)> flush_queue)
-    : capacity{capacity}, buffer(capacity), flush_queue{std::move(flush_queue)} {}
+#include <cstdlib>
+#include <utility>
 
-void MemTable::insert(models::Entry entry) {
-  if (this->buffer[this->entry_to_write] != models::Entry{}) {
-    this->flush_queue(this->buffer[this->entry_to_write]);
-  }
-
-  this->buffer.at(this->entry_to_write) = entry;
-  this->entry_to_write = (this->entry_to_write + 1) % this->capacity;
+MemTable::MemTable(FileManager& file_manager, Configuration config)
+    : file_manager{file_manager},
+      memtable_capacity{config.capacity},
+      max_level{config.max_level},
+      probability{config.probability},
+      memtable_size{0},
+      current_level{0} {
+  this->memtable_head = nullptr;
 }
 
-auto MemTable::delete_entry(models::Entry& entry) -> bool {
-  std::vector<models::Entry> new_buffer(this->capacity);
-  bool delete_occurred = false;
-  for (models::Entry curr_entry : this->buffer) {
-    if (curr_entry != entry) {
-      new_buffer.push_back(curr_entry);
+MemTable::~MemTable() = default;
+
+void MemTable::insert(const std::vector<models::Entry>& entries) {
+  std::lock_guard<std::mutex> lock(this->queue_lock);
+  this->queue.insert(this->queue.end(), entries.begin(), entries.end());
+}
+
+void MemTable::start() {
+  this->queue_to_memtable_thread =
+      std::jthread([this](std::stop_token st) { this->from_queue_to_memtable(std::move(st)); });
+}
+
+void MemTable::stop() {
+  {
+    std::lock_guard<std::mutex> lock(this->queue_lock);
+  }
+
+  this->queue_to_memtable_cv.notify_one();
+
+  if (this->queue_to_memtable_thread.joinable()) {
+    this->queue_to_memtable_thread.join();
+  }
+
+  if (this->memtable_to_file_thread.joinable()) {
+    this->memtable_to_file_thread.join();
+  }
+}
+
+void MemTable::from_queue_to_memtable(std::stop_token stoken) {
+  while (!stoken.stop_requested()) {
+    std::vector<models::Entry> local_batch;
+    {
+      std::unique_lock lock(this->queue_lock);
+      this->queue_to_memtable_cv.wait(
+          lock, [&] { return stoken.stop_requested() || not this->queue.empty(); });
+
+      if (this->queue.empty()) {
+        continue;
+      }
+
+      local_batch = std::move(this->queue);
+      this->queue.clear();
+    }
+
+    std::lock_guard lock(this->memtable_lock);
+    for (auto& entry : local_batch) {
+      this->insert_memtable(entry);
+      this->memtable_size += sizeof(entry);
+    }
+
+    if (this->memtable_size >= this->memtable_capacity) {
+      // TODO: transfer to thread
+      this->flush_memtable();
+    }
+  }
+}
+
+void MemTable::insert_memtable(models::Entry entry) {
+  std::vector<MemTableNode*> update(this->max_level + 1, this->memtable_head.get());
+  MemTableNode* curr = this->memtable_head.get();
+
+  for (int lvl = this->max_level; lvl >= 0; --lvl) {
+    while (curr->levels[lvl] && curr->levels[lvl]->entry < entry) {
+      curr = curr->levels[lvl];
+    }
+    update[lvl] = curr;
+  }
+
+  int new_level = this->random_level();
+  auto new_node = std::make_unique<MemTableNode>(entry, new_level);
+  MemTableNode* new_node_ptr = new_node.get();
+
+  new_node->next_owned = std::move(update[0]->next_owned);
+  update[0]->next_owned = std::move(new_node);
+
+  for (int lvl = 0; lvl <= new_level; ++lvl) {
+    new_node_ptr->levels[lvl] = update[lvl]->levels[lvl];
+    update[lvl]->levels[lvl] = new_node_ptr;
+  }
+}
+
+void MemTable::flush_memtable() {
+  std::unique_ptr<MemTableNode> old_data;
+
+  {
+    std::lock_guard<std::mutex> lock(this->memtable_lock);
+    if (not this->memtable_head->next_owned) {
+      return;
+    }
+
+    old_data = std::move(this->memtable_head->next_owned);
+
+    this->memtable_size = 0;
+  }
+
+  std::vector<int> delta_values;
+  std::vector<models::Timestamp> delta_time;
+
+  MemTableNode* curr = old_data.get();
+
+  while (curr) {
+    const models::Entry& entry = curr->entry;
+
+    if (delta_values.empty()) {
+      delta_values.push_back(entry.value);
     } else {
-      delete_occurred = true;
+      delta_values.push_back(entry.value - delta_values.back());
     }
-  }
-  this->buffer = new_buffer;
 
-  return delete_occurred;
-}
-
-auto MemTable::contains(models::Entry& entry) -> bool {
-  for (models::Entry& curr_entry : this->buffer) {
-    if (curr_entry == entry) {
-      return true;
-    }
-  }
-  return false;
-}
-
-auto MemTable::get_before(models::Timestamp& time) -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries;
-  for (const auto& entry : this->buffer) {
-    if (entry.time < time) {
-      entries.push_back(entry);
-    }
-  }
-  return entries;
-}
-
-auto MemTable::get_after(models::Timestamp& time) -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries;
-  for (const auto& entry : this->buffer) {
-    if (entry.time > time) {
-      entries.push_back(entry);
+    if (delta_time.empty()) {
+      delta_time.push_back(entry.time);
+    } else {
+      delta_time.push_back(entry.time - delta_time.back());
     }
   }
 
-  return entries;
-}
-
-auto MemTable::get_between(models::Timestamp& before_time, models::Timestamp& after_time)
-    -> std::vector<models::Entry> {
-  std::vector<models::Entry> entries;
-  for (const auto& entry : this->buffer) {
-    if (entry.time > before_time && entry.time < after_time) {
-      entries.push_back(entry);
-    }
+  if (delta_time.empty()) {
+    return;
   }
-  return entries;
+
+  std::vector<models::Timestamp> delta_delta_time(delta_time.size());
+  delta_delta_time[0] = delta_time[0];
+  for (size_t i = 1; i < delta_time.size(); ++i) {
+    delta_delta_time[i] = delta_time[i] - delta_time[i - 1];
+  }
+
+  this->file_manager.add_to_file(delta_delta_time, delta_values);
 }
 
-auto MemTable::get_buffer() -> std::vector<models::Entry>& {
-  return this->buffer;
-}
-
-void MemTable::clear() {
-  this->buffer.clear();
-  this->buffer.assign(this->capacity, models::Entry{});
+auto MemTable::random_level() const -> int {
+  int level = 0;
+  while (static_cast<float>(std::rand()) / RAND_MAX < this->probability &&
+         level < this->max_level) {
+    ++level;
+  }
+  return level;
 }

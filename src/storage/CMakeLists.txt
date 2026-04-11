@@ -1,7 +1,6 @@
 find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(memtable)
-add_subdirectory(file_management)
 
 add_library(storage
   storage.cpp
@@ -13,9 +12,9 @@ target_include_directories(storage
 )
 
 target_link_libraries(storage
-  PRIVATE 
+  PRIVATE
     memtable
-    file_management
+    file_store
     nlohmann_json::nlohmann_json
 )
 

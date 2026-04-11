@@ -18,6 +18,7 @@ void post_request(http::request<http::string_body>&& req,
     std::vector<models::Entry> entries = helpers::parse_json_for_entries(req.body());
 
     storage->write_ahead_insert(entries);
+    storage->memtable_queue_insert(entries);
 
     http::response<http::string_body> res{http::status::created, req.version()};
     res.set(http::field::content_type, "application/json");

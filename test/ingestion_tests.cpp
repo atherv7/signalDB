@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
 #include <pthread.h>
 
-#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 
+#include "file_management/file_manager.h"
 #include "helpers.h"
 #include "ingestion/server.h"
 #include "storage/models.h"
@@ -14,10 +15,11 @@
 TEST(APITests, PostRequest) {
   std::string storage_file = "api_storage.txt.ahead";
   helpers::File file{storage_file};
-  std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage.txt", 1);
+  FileManager file_manager("dummy_file.txt");
+  std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage.txt", file_manager);
   Server server{store};
 
-  std::thread server_thread([&]() { server.run(); });
+  std::jthread server_thread([&]() { server.run(); });
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
@@ -25,38 +27,20 @@ TEST(APITests, PostRequest) {
   EXPECT_TRUE(helpers::post_request(entries));
   EXPECT_TRUE(file.wait_for_file());
 
-  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-  if (not input_file.is_open()) {
-    std::cerr << "Error opening file for reading\n";
-    FAIL();
-  }
-
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries{};
-
-  while (input_file.read(reinterpret_cast<char*>(&current_entry), size_of_entry)) {
-    saved_entries.push_back(current_entry);
-  }
-  input_file.close();
+  std::vector<models::Entry> saved_entries = helpers::get_entries_from_file(storage_file);
 
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
-
-  file.~File();
-  server.shutdown();
-  if (server_thread.joinable()) {
-    server_thread.join();
-  }
 }
 
 TEST(APITests, PostWS) {
   std::string storage_file = "api_storage_2.txt.ahead";
   helpers::File file{storage_file};
-  std::shared_ptr<Storage> store = std::make_shared<Storage>(1, "api_storage_2.txt", 1);
+  FileManager file_manager("dummy_file");
+  std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage_2.txt", file_manager);
   Server server{store};
 
-  std::thread server_thread([&]() { server.run(); });
+  std::jthread server_thread([&]() { server.run(); });
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
@@ -68,30 +52,11 @@ TEST(APITests, PostWS) {
   EXPECT_TRUE(helpers::post_ws(entries));
   EXPECT_TRUE(file.wait_for_file());
 
-  std::ifstream input_file(storage_file, std::ios::binary | std::ios::in);
-  if (not input_file.is_open()) {
-    std::cerr << "Error opening file for reading\n";
-    FAIL();
-  }
+  std::vector<models::Entry> saved_entries = helpers::get_entries_from_file(storage_file);
 
-  int size_of_entry = sizeof(models::Entry);
-  models::Entry current_entry;
-  std::vector<models::Entry> saved_entries;
-
-  while (input_file.read(reinterpret_cast<char*>(&current_entry), size_of_entry)) {
-    saved_entries.push_back(current_entry);
-  }
-  input_file.close();
-
-  EXPECT_TRUE(saved_entries.size() == 4);
+  ASSERT_EQ(saved_entries.size(), 4);
 
   for (int i = 0; i < saved_entries.size(); i++) {
     EXPECT_EQ(saved_entries[i], entries[i]);
-  }
-
-  file.~File();
-  server.shutdown();
-  if (server_thread.joinable()) {
-    server_thread.join();
   }
 }

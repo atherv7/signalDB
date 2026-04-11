@@ -20,6 +20,7 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
+// TODO: fix shutdown logic
 class Server {
  public:
   Server(std::shared_ptr<Storage> storage);

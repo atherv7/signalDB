@@ -3,10 +3,8 @@
 #include <cassert>
 #include <cstdint>
 
-#include "storage/models.h"
-
 FileManager::FileManager(const std::string& storage_file_name) {
-  this->file = new FileStore{storage_file_name};
+  this->file = std::make_unique<FileStore>(storage_file_name);
 }
 
 void FileManager::add_to_file(const std::vector<models::Timestamp>& delta_delta_time,

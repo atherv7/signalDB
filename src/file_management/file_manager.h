@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -14,5 +15,5 @@ class FileManager {
                    const std::vector<int>& delta_values);
 
  private:
-  FileStore* file;
+  std::unique_ptr<FileStore> file;
 };

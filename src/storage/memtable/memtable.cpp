@@ -1,17 +1,9 @@
 #include "memtable.h"
 
 #include <cstdlib>
-#include <memory>
-#include <mutex>
-#include <stop_token>
-#include <thread>
 #include <utility>
-#include <vector>
 
-#include "file_management/file_manager.h"
-#include "storage/models.h"
-
-MemTable::MemTable(int memtable_capacity,
+MemTable::MemTable(unsigned long memtable_capacity,
                    FileManager& file_manager,
                    int max_level,
                    float probability)
@@ -23,6 +15,8 @@ MemTable::MemTable(int memtable_capacity,
       current_level{0} {
   this->memtable_head = nullptr;
 }
+
+MemTable::~MemTable() = default;
 
 void MemTable::insert(const std::vector<models::Entry>& entries) {
   std::lock_guard<std::mutex> lock(this->queue_lock);

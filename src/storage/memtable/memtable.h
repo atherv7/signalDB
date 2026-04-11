@@ -12,12 +12,12 @@
 
 class MemTable {
  public:
-  MemTable(int memtable_capacity,
+  MemTable(unsigned long memtable_capacity,
            FileManager& file_manager,
            int max_level = 16,
            float probability = 0.5f);
 
-  ~MemTable() = default;
+  ~MemTable();
 
   // prevent system crash from mutex, thread, and atomic copying
   MemTable(const MemTable&) = delete;
@@ -52,8 +52,8 @@ class MemTable {
   std::vector<models::Entry> queue;
   std::mutex queue_lock;
   std::mutex memtable_lock;
-  int memtable_capacity;        // TODO: transfer in terms of bytes
-  unsigned long memtable_size;  // TODO: change to size in terms of bytes
+  unsigned long memtable_capacity;
+  unsigned long memtable_size;
   int max_level;
   float probability;
   int current_level;

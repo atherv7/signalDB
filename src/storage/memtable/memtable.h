@@ -12,10 +12,13 @@
 
 class MemTable {
  public:
-  MemTable(unsigned long memtable_capacity,
-           FileManager& file_manager,
-           int max_level = 16,
-           float probability = 0.5f);
+  struct Configuration {
+    unsigned long capacity = 1024 * 1024ul;
+    int max_level = 16;
+    float probability = 0.5f;
+  };
+
+  MemTable(FileManager& file_manager, Configuration config);
 
   ~MemTable();
 

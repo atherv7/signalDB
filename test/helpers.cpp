@@ -12,6 +12,7 @@
 #include <chrono>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <nlohmann/json.hpp>
 #include <thread>
 #include <vector>
@@ -31,6 +32,34 @@ auto File::wait_for_file(std::chrono::seconds timeout,
   }
 
   return false;
+}
+
+auto get_entries_from_file(const std::string& file_name) -> std::vector<models::Entry> {
+  std::ifstream input_file(file_name, std::ios::binary | std::ios::in);
+  if (!input_file.is_open()) {
+    std::cerr << "Error opening file for reading\n";
+    // TODO: raise exception
+  }
+
+  uint32_t entry_size = 0;
+  std::vector<models::Entry> saved_entries{};
+
+  while (input_file.read(reinterpret_cast<char*>(&entry_size), sizeof(entry_size))) {
+    std::vector<uint8_t> buffer(entry_size);
+
+    if (input_file.read(reinterpret_cast<char*>(buffer.data()), entry_size)) {
+      try {
+        nlohmann::json j = nlohmann::json::from_cbor(buffer);
+        models::Entry current_entry = j.get<models::Entry>();
+        saved_entries.push_back(current_entry);
+      } catch (const std::exception& e) {
+        std::cerr << "Decoding error: " << e.what() << "\n";
+        // TODO: raise exception
+      }
+    }
+  }
+
+  return saved_entries;
 }
 
 auto post_request(const std::vector<models::Entry>& entries) -> bool {

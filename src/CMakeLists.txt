@@ -9,5 +9,5 @@ add_executable(signalDB
 target_link_libraries(signalDB
   PRIVATE storage
           ingestion
-          file_store
+          file_management
 )

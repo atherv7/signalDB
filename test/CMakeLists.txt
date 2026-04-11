@@ -8,6 +8,7 @@ add_executable(storage_tests
 target_link_libraries(storage_tests
   PRIVATE
     storage
+    file_management
     GTest::gtest
     GTest::gtest_main
     Boost::system
@@ -23,6 +24,7 @@ target_link_libraries(ingestion_tests
   PRIVATE
     storage
     ingestion
+    file_management
     GTest::gtest
     GTest::gtest_main
     Boost::system

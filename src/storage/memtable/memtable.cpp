@@ -3,14 +3,11 @@
 #include <cstdlib>
 #include <utility>
 
-MemTable::MemTable(unsigned long memtable_capacity,
-                   FileManager& file_manager,
-                   int max_level,
-                   float probability)
+MemTable::MemTable(FileManager& file_manager, Configuration config)
     : file_manager{file_manager},
-      memtable_capacity{memtable_capacity},
-      max_level{max_level},
-      probability{probability},
+      memtable_capacity{config.capacity},
+      max_level{config.max_level},
+      probability{config.probability},
       memtable_size{0},
       current_level{0} {
   this->memtable_head = nullptr;

@@ -34,6 +34,8 @@ struct File {
   }
 };
 
+auto get_entries_from_file(const std::string& file_name) -> std::vector<models::Entry>;
+
 auto post_request(const std::vector<models::Entry>& entries) -> bool;
 
 auto post_ws(const std::vector<models::Entry>& entries) -> bool;

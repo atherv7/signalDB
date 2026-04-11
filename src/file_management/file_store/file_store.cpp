@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-FileStore::FileStore(const std::string& storage_file) : storage_file(storage_file) {}
+FileStore::FileStore(const std::string& storage_file) : storage_file{storage_file}, fd{-1} {}
 
 void FileStore::write_sync(const std::vector<models::Entry>& entries) {
   if (entries.empty()) {
@@ -25,9 +25,9 @@ void FileStore::write_sync(const std::vector<models::Entry>& entries) {
 
 void FileStore::write_async(const void* data, size_t size) {
   off_t offset = this->write_offset.fetch_add(size);
-  pwrite(fd, data, size, offset);
+  pwrite(this->fd, data, size, offset);
 }
 
 void FileStore::flush() const {
-  fdatasync(fd);
+  fdatasync(this->fd);
 }

@@ -14,14 +14,12 @@ struct Timestamp {
     return hour == other_time.hour && min == other_time.min;
   }
 
-  bool operator<(const Timestamp& other_time) const {
-    double this_total = (hour * 60) + min;
-    double other_total = (other_time.hour * 60) + other_time.min;
+  auto operator<=>(const Timestamp& other_time) const {
+    double this_time_mins = (this->hour * 60.0) + this->min;
+    double other_time_mins = (other_time.hour * 60.0) + other_time.min;
 
-    return this_total < other_total;
+    return this_time_mins <=> other_time_mins;
   }
-
-  bool operator>(const Timestamp& other_time) const { return other_time < *this; }
 
   Timestamp operator-(const Timestamp& other_time) const {
     double this_minutes = (this->hour * 60) + this->min;
@@ -51,9 +49,7 @@ struct Entry {
     return time == other_entry.time && value == other_entry.value;
   }
 
-  bool operator!=(const Entry& other_entry) const { return !(*this == other_entry); }
-
-  bool operator<(const Entry& other_entry) const { return this->time < other_entry.time; }
+  auto operator<=>(const Entry& other_entry) const { return this->time <=> other_entry.time; }
 
   friend std::ostream& operator<<(std::ostream& os, const Entry& ent) {
     os << "Entry(time: " << ent.time << ", value: " << ent.value << ")";

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <pthread.h>
 
-#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -20,7 +19,7 @@ TEST(APITests, PostRequest) {
   std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage.txt", file_manager);
   Server server{store};
 
-  std::thread server_thread([&]() { server.run(); });
+  std::jthread server_thread([&]() { server.run(); });
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2}};
@@ -32,13 +31,6 @@ TEST(APITests, PostRequest) {
 
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
-
-  // TODO: shouldn't need to do this
-  file.~File();
-  server.shutdown();
-  if (server_thread.joinable()) {
-    server_thread.join();
-  }
 }
 
 TEST(APITests, PostWS) {
@@ -48,7 +40,7 @@ TEST(APITests, PostWS) {
   std::shared_ptr<Storage> store = std::make_shared<Storage>("api_storage_2.txt", file_manager);
   Server server{store};
 
-  std::thread server_thread([&]() { server.run(); });
+  std::jthread server_thread([&]() { server.run(); });
 
   std::vector<models::Entry> entries = {
       {.time = models::Timestamp{.hour = 0, .min = 1}, .value = 2},
@@ -62,15 +54,9 @@ TEST(APITests, PostWS) {
 
   std::vector<models::Entry> saved_entries = helpers::get_entries_from_file(storage_file);
 
-  EXPECT_TRUE(saved_entries.size() == 4);
+  ASSERT_EQ(saved_entries.size(), 4);
 
   for (int i = 0; i < saved_entries.size(); i++) {
     EXPECT_EQ(saved_entries[i], entries[i]);
-  }
-
-  file.~File();
-  server.shutdown();
-  if (server_thread.joinable()) {
-    server_thread.join();
   }
 }

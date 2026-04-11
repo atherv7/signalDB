@@ -18,7 +18,9 @@ TEST(StorageTest, WriteAheadLog) {
   store->write_ahead_insert(entries);
 
   EXPECT_TRUE(file.wait_for_file());
+
   std::vector<models::Entry> saved_entries = helpers::get_entries_from_file(storage_file);
+
   EXPECT_TRUE(saved_entries.size() == 1);
   EXPECT_TRUE(saved_entries[0] == entries[0]);
 }

@@ -1,49 +1,34 @@
 #pragma once
 
-#include <boost/asio/dispatch.hpp>
 #include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/http/string_body.hpp>
-#include <boost/beast/websocket.hpp>
 #include <memory>
-#include <thread>
-#include <vector>
+#include <mutex>
+#include <set>
 
-#include "storage/storage.h"
+#include "session.h"
 
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace websocket = beast::websocket;
-namespace net = boost::asio;
-using tcp = boost::asio::ip::tcp;
-
-// TODO: fix shutdown logic
-class Server {
+class SessionManager {
  public:
-  Server(std::shared_ptr<Storage> storage);
-  ~Server();
+  void add(std::shared_ptr<BaseSession> session);
+  void remove(std::shared_ptr<BaseSession> session);
+  void close_all();
 
+ private:
+  std::mutex mutex;
+  std::set<std::shared_ptr<BaseSession>> sessions;
+};
+
+class Server : public std::enable_shared_from_this<Server> {
+ public:
+  Server(std::shared_ptr<Storage> storage, net::io_context& ioc);
   void run();
-
   void shutdown();
 
  private:
-  const net::ip::address address = net::ip::make_address("0.0.0.0");
-  const unsigned short port = static_cast<unsigned short>(8000);
-  net::io_context ioc{1};
+  net::io_context& ioc;
   tcp::acceptor acceptor;
-  std::vector<std::thread> threads;
-  std::atomic<bool> running{true};
   std::shared_ptr<Storage> storage;
-
-  void handle_http(http::request<http::string_body>&& req, tcp::socket& socket);
-
-  void session(tcp::socket socket);
+  std::shared_ptr<SessionManager> session_manager;
 
   void do_accept();
-
-  void websocket_conn(const http::request<http::string_body>& req, tcp::socket socket);
 };
